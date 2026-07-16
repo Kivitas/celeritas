@@ -1,0 +1,24 @@
+cff-version: 1.0.0
+message: "If you use this simulation and analysis dashboard in peer-reviewed clinical work, research, or thesis, please cite it as below. If used in your thesis, please credit the authors and include the DOI reference."
+authors:
+  - name: "Kivitas"
+title: "Celeritas: High-Energy Cherenkov Luminescence Spectrometry Simulator"
+version: 1.0.0
+doi: 10.5281/zenodo.100
+date-released: 2026-06-22
+url: ""
+abstract: "Celeritas is a comprehensive high-energy physics simulation platform for Cherenkov luminescence spectroscopy, supporting relativistic particle tracking, optical transport modeling, and detector performance prediction for medical dosimetry, particle physics experiments, and radiation therapy research. Features include 3D/4D/2D visualization, AI-powered analysis with multiple provider support (Claude, Gemini, OpenAI, Mistral), extensive preset libraries, and advanced customization for high-level scientific experiments."
+keywords:
+  - Cherenkov radiation
+  - Spectroscopy
+  - Medical dosimetry
+  - Particle physics
+  - Radiation therapy
+  - High-energy physics
+  - Optical transport
+  - Detector simulation
+  - 3D visualization
+  - 4D spacetime analysis
+  - AI-assisted research
+  - Scientific computing
+license: MIT

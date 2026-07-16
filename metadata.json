@@ -1,0 +1,6 @@
+{
+  "name": "Celeritas",
+  "description": "An advanced physical simulator for relativistic Cherenkov radiation kinematics, multi-layered optical transport, dopant fluorescence transitions, and silicon pixel matrix spectrometry.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
