@@ -95,9 +95,15 @@ export default React.memo(function Sidebar({ activeTab, onTabChange, isOpen, onC
                   </div>
                   <p className="text-xs font-bold text-orange-400 font-mono">Standard Standardized</p>
                 </div>
-                <span className="text-[10px] text-slate-500 font-medium">
-                  v1.0 &middot; Open Access
-                </span>
+                <div className="flex flex-col items-center gap-2 mt-2">
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    v1.0 &middot; Open Access
+                  </span>
+                  <div className="flex gap-3 text-[10px] text-slate-500">
+                    <a href="/privacy-policy" className="hover:text-slate-300 transition-colors">Privacy Policy</a>
+                    <a href="/terms-of-service" className="hover:text-slate-300 transition-colors">Terms of Service</a>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -157,8 +163,12 @@ export default React.memo(function Sidebar({ activeTab, onTabChange, isOpen, onC
           </div>
           <p className="text-xs font-bold text-orange-400 font-mono">Standard Standardized</p>
         </div>
-        <div className="text-[9px] text-slate-600 text-center font-mono">
-          v1.0 &middot; Kivitas
+        <div className="flex flex-col items-center gap-1.5 mt-2 text-[9px] text-slate-600 font-mono">
+          <span>v1.0 &middot; Kivitas</span>
+          <div className="flex gap-3">
+            <a href="/privacy-policy" className="hover:text-slate-400 transition-colors">Privacy</a>
+            <a href="/terms-of-service" className="hover:text-slate-400 transition-colors">Terms</a>
+          </div>
         </div>
       </div>
     </aside>
