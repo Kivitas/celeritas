@@ -34,6 +34,7 @@ export default function ConfigurationTab({
   const [calcMass, setCalcMass] = useState<number>(0.51099895);
   const [calcEnergy, setCalcEnergy] = useState<number>(1.2);
   const [calcRefIndex, setCalcRefIndex] = useState<number>(1.333);
+  const [activeSection, setActiveSection] = useState<string>("beam");
 
   // Form state updaters
   const updateParam = <K extends keyof SimulationParams>(key: K, value: SimulationParams[K]) => {
@@ -142,10 +143,34 @@ export default function ConfigurationTab({
       </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="flex flex-wrap gap-2 pb-4 mb-4 border-b border-white/5">
+        {[
+          { id: "beam", label: "Beam Characteristics", icon: <Atom className="w-4 h-4" /> },
+          { id: "radiator", label: "Radiator & Material", icon: <Layers className="w-4 h-4" /> },
+          { id: "detector", label: "Detector & Readout", icon: <Cpu className="w-4 h-4" /> },
+          { id: "toggles", label: "Experimental Toggles", icon: <Sliders className="w-4 h-4" /> },
+          { id: "calculator", label: "Kinematics Calculator", icon: <Calculator className="w-4 h-4" /> },
+          { id: "formulas", label: "Reference Manual", icon: <BookOpen className="w-4 h-4" /> },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveSection(tab.id)}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg whitespace-nowrap transition-all ${
+              activeSection === tab.id
+                ? "bg-gradient-to-r from-orange-500/20 to-orange-500/10 text-orange-400 border border-orange-500/30 shadow-md"
+                : "bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-300 border border-transparent"
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-        {/* FIELD SET 1: RELATIVISTIC BEAMS & TARGET INTERACTIVE SEGMENT */}
-        <div className={`border p-5 rounded-xl shadow-sm space-y-4 ${cardBg}`}>
+      <div className="w-full mx-auto max-w-5xl">
+
+        {activeSection === "beam" && (
+        <div className={`border p-6 md:p-8 rounded-xl shadow-sm space-y-8 ${cardBg}`}>
           <div className="flex items-center space-x-2 border-b border-slate-100/10 pb-3">
             <Atom className="w-5 h-5 text-orange-500" />
             <h3 className={`text-xs font-extrabold tracking-wider uppercase font-sans ${textTitle}`}>
@@ -420,9 +445,10 @@ export default function ConfigurationTab({
             </div>
           </div>
         </div>
+        )}
 
-        {/* FIELD SET 2: SEMICONDUCTOR SENSOR ARCHITECTURE */}
-        <div className={`border p-5 rounded-xl shadow-sm space-y-4 ${cardBg}`}>
+        {activeSection === "radiator" && (
+        <div className={`border p-6 md:p-8 rounded-xl shadow-sm space-y-8 ${cardBg}`}>
           <div className="flex items-center space-x-2 border-b border-slate-100/10 pb-3">
             <Cpu className="w-5 h-5 text-orange-500" />
             <h3 className={`text-xs font-extrabold tracking-wider uppercase font-sans ${textTitle}`}>
@@ -709,9 +735,10 @@ export default function ConfigurationTab({
             </div>
           </div>
         </div>
+        )}
 
-        {/* FIELD SET 3: TARGET MEDIA & Experimental DOSIMETRY */}
-        <div className={`border p-5 rounded-xl shadow-sm space-y-4 ${cardBg}`}>
+        {activeSection === "detector" && (
+        <div className={`border p-6 md:p-8 rounded-xl shadow-sm space-y-8 ${cardBg}`}>
           <div className="flex items-center space-x-2 border-b border-slate-100/10 pb-3">
             <Compass className="w-5 h-5 text-orange-500" />
             <h3 className={`text-xs font-extrabold tracking-wider uppercase font-sans ${textTitle}`}>
@@ -1143,10 +1170,10 @@ export default function ConfigurationTab({
             )}
           </div>
         </div>
-      </div>
+        )}
 
-      {/* Experimental Simulation toggles */}
-      <div className={`border p-5 rounded-xl shadow-sm ${cardBg}`}>
+        {activeSection === "toggles" && (
+        <div className={`border p-6 md:p-8 rounded-xl shadow-sm space-y-8 ${cardBg}`}>
         <div className="flex items-center space-x-2 border-b border-slate-100/10 pb-3 mb-4">
           <Sliders className="w-5 h-5 text-orange-500" />
           <h3 className={`text-xs font-extrabold tracking-wider uppercase font-sans ${textTitle}`}>
@@ -1199,9 +1226,10 @@ export default function ConfigurationTab({
           ))}
         </div>
       </div>
+        )}
 
-      {/* SCIENTIFIC EXCLUSIVE 1: RELATIVISTIC PARTICLE KINEMATICS SOLVER */}
-      <div className={`border p-5 rounded-xl shadow-md ${cardBg}`}>
+        {activeSection === "calculator" && (
+        <div className={`border p-6 md:p-8 rounded-xl shadow-md space-y-8 ${cardBg}`}>
         <div className="flex items-center space-x-2 border-b border-slate-100/10 pb-4 mb-4">
           <Calculator className="w-5 h-5 text-orange-500 shrink-0" />
           <div>
@@ -1412,9 +1440,10 @@ export default function ConfigurationTab({
           </div>
         </div>
       </div>
+        )}
 
-      {/* SCIENTIFIC EXCLUSIVE 2: FORMULAS & ACADEMIC PRINCIPLES REFERENCE MANUAL */}
-      <div className={`border p-5 rounded-xl shadow-md ${cardBg}`}>
+        {activeSection === "formulas" && (
+        <div className={`border p-6 md:p-8 rounded-xl shadow-md space-y-8 ${cardBg}`}>
         <div className="flex items-center space-x-2 border-b border-slate-100/10 pb-4 mb-4">
           <BookOpen className="w-5 h-5 text-orange-500 shrink-0" />
           <div>
@@ -1458,6 +1487,8 @@ export default function ConfigurationTab({
           </div>
 
         </div>
+        </div>
+        )}
       </div>
     </div>
   );
