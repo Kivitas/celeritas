@@ -654,7 +654,7 @@ export const EXPERIMENT_PRESETS: ExperimentPreset[] = [
     id: "micro_black_hole_hawking",
     name: "Trans-Planckian Micro-Black Hole",
     description: "Simulates the creation and rapid Hawking evaporation of a microscopic black hole from extreme energy collisions.",
-    category: "quantum-gravity",
+    category: "particle-physics",
     params: {
       beamEnergyMeV: 14000000, // 14 TeV
       energyUnit: "TeV",
@@ -708,7 +708,7 @@ export const EXPERIMENT_PRESETS: ExperimentPreset[] = [
       substrateThicknessUm: 150,
       quantumEfficiencyPct: 95,
       pixelDeadTimeNs: 10,
-      activeCoolingType: "Microchannel Liquid CO2",
+      activeCoolingType: "Liquid Nitrogen Cryo",
       biasVoltageV: 300,
       dopingDensityPtype: 1.5,
       readoutMode: "ToT (Time over Threshold)",

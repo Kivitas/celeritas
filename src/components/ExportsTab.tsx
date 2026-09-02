@@ -8,6 +8,8 @@ import { predictDetectorPerformance, calculateSobolSensitivities } from "../core
 import { SimulationParams, DetectorSettings } from "../types";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { TrendingUp, Sliders, Cpu, FileJson, FileText, Download, CheckCircle, Info } from "lucide-react";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 
 interface ExportsTabProps {
   params: SimulationParams;
@@ -85,9 +87,6 @@ export default function ExportsTab({ params, detector, onGenerateReport, isDarkM
       const element = document.getElementById("exports-tab");
       if (!element) return;
       
-      const html2canvas = (await import("html2canvas")).default;
-      const { jsPDF } = await import("jspdf");
-
       const canvas = await html2canvas(element, { scale: 2, backgroundColor: isDarkMode ? "#020617" : "#ffffff" });
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({
