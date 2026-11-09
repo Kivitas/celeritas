@@ -6,12 +6,20 @@
 import React, { useState } from "react";
 import { BatchRow } from "../types";
 import { Upload, Download, Plus, Trash2, Play, Table, AlertCircle, FileSpreadsheet } from "lucide-react";
+import { frankTammPhotonsPerMm } from "../core/physics";
 
 interface RawBatchTabProps {
   batchRows: BatchRow[];
   setBatchRows: React.Dispatch<React.SetStateAction<BatchRow[]>>;
   isDarkMode: boolean;
 }
+
+// Escape a text cell for CSV: double quotes are doubled, and a leading
+// = + - or @ gets a single quote so spreadsheets do not run it as a formula.
+const csvTextCell = (value: string) => {
+  const guarded = /^[=+\-@]/.test(value) ? `'${value}` : value;
+  return `"${guarded.replace(/"/g, '""')}"`;
+};
 
 export default function RawBatchTab({ batchRows, setBatchRows, isDarkMode }: RawBatchTabProps) {
   const [csvInput, setCsvInput] = useState("");
@@ -24,14 +32,15 @@ export default function RawBatchTab({ batchRows, setBatchRows, isDarkMode }: Raw
         const beta = row.beta;
         const n = row.refractiveIndex;
         const betaN = beta * n;
-        
+
         let calculatedAngle = 0.0;
         let calculatedYield = 0.0;
 
         // cos(theta) = 1 / (beta * n)
         if (betaN > 1.0) {
           calculatedAngle = Math.acos(1.0 / betaN) * (180.0 / Math.PI);
-          calculatedYield = 2 * Math.PI * (1 / 137.03599) * (1 - 1 / (beta * beta * n * n)) * 8200; // Relative photon index yield
+          // Frank-Tamm photons per particle over 300-800 nm, for the row's radiator thickness
+          calculatedYield = frankTammPhotonsPerMm(beta, n, 300, 800) * row.radiatorThicknessMm;
         }
 
         return {
@@ -139,11 +148,11 @@ export default function RawBatchTab({ batchRows, setBatchRows, isDarkMode }: Raw
   };
 
   const downloadCalculatedCSV = () => {
-    const header = "SampleName,Particle_Beta,Refractive_Index,KineticEnergy_MeV,TargetThickness_mm,Calculated_Angle_deg,Spectral_Photon_Yield\n";
+    const header = "SampleName,Particle_Beta,Refractive_Index,KineticEnergy_MeV,TargetThickness_mm,Calculated_Angle_deg,Photons_Per_Particle\n";
     const body = batchRows
       .map(
         (r) =>
-          `"${r.sampleName}",${r.beta},${r.refractiveIndex},${r.energyMeV},${r.radiatorThicknessMm},${r.angleDeg || 0.0},${r.photonYield || 0.0}`
+          `${csvTextCell(r.sampleName)},${r.beta},${r.refractiveIndex},${r.energyMeV},${r.radiatorThicknessMm},${r.angleDeg || 0.0},${r.photonYield || 0.0}`
       )
       .join("\n");
 
@@ -295,7 +304,7 @@ export default function RawBatchTab({ batchRows, setBatchRows, isDarkMode }: Raw
                 <th className="p-3 border-r border-slate-100/10 font-bold uppercase tracking-wider text-[9px]">Kinetic Energy (MeV)</th>
                 <th className="p-3 border-r border-slate-100/10 font-bold uppercase tracking-wider text-[9px]">Target Thickness x (mm)</th>
                 <th className="p-3 border-r border-slate-100/10 text-blue-400 font-bold uppercase tracking-wider text-[9px]">Cerenkov Angle θc (deg)</th>
-                <th className="p-3 border-r border-slate-100/10 text-orange-400 font-bold uppercase tracking-wider text-[9px]">Emitted Yield (photons/cm)</th>
+                <th className="p-3 border-r border-slate-100/10 text-orange-400 font-bold uppercase tracking-wider text-[9px]">Frank-Tamm Yield (photons / particle, 300-800 nm)</th>
                 <th className="p-3 text-center font-bold uppercase tracking-wider text-[9px]">Action</th>
               </tr>
             </thead>
@@ -357,7 +366,7 @@ export default function RawBatchTab({ batchRows, setBatchRows, isDarkMode }: Raw
                       {row.angleDeg !== undefined ? `${row.angleDeg}°` : "--"}
                     </td>
                     <td className="p-2 border-r border-slate-100/10 font-bold text-orange-500">
-                      {row.photonYield !== undefined ? `${row.photonYield.toLocaleString()} /cm` : "--"}
+                      {row.photonYield !== undefined ? `${row.photonYield.toLocaleString()} photons / particle` : "--"}
                     </td>
                     <td className="p-2 text-center">
                       <button

@@ -4,8 +4,29 @@
  */
 
 import React, { useState, useRef, useEffect } from "react";
-import { SimulationParams, DetectorSettings, SimulationSummary } from "../types";
-import { ShieldCheck, FileText, Image, PenTool, Check, AlertTriangle, Crosshair, Sparkles } from "lucide-react";
+import { SimulationParams, SimulationSummary } from "../types";
+import { ShieldCheck, Image, PenTool } from "lucide-react";
+import {
+  calculateRelativisticBeta,
+  cherenkovAngleDeg,
+  frankTammPhotonsPerMm,
+  getCherenkovThresholdEnergy,
+  getRefractiveIndexAt,
+} from "../core/physics";
+import { MATERIAL_PRESETS } from "../data/presets";
+
+const ELECTRON_MASS_MEV = 0.51099895;
+
+interface ValidationCheck {
+  name: string;
+  reference: number;
+  computed: number;
+  tolerance: number;
+  unit: string;
+  decimals: number;
+}
+
+const isCheckPass = (check: ValidationCheck) => Math.abs(check.computed - check.reference) <= check.tolerance;
 
 interface ValidationTabProps {
   params: SimulationParams;
@@ -238,17 +259,59 @@ export default function ValidationTab({ params, setParams, summary, isDarkMode }
     reader.readAsDataURL(file);
   };
 
-  // Peer-reviewed physical benchmark data comparisons
-  const benchmarkRuns = [
-    { target: "Heavy water core n_D2O reference", codeValue: `${summary.isCherenkovGenerated ? "Generating cones" : "No-radiation decay"}`, expectedValue: "Generating cones > 0.44 MeV", status: "VERIFIED" },
-    { target: "Theoretical Lead Glass theta_c [E = 1.5 GeV]", codeValue: "53.22°", expectedValue: "53.24° (99.96% precision)", status: "VERIFIED" },
-    { target: "ATLAS Higgs Diphoton Signature", codeValue: params.componentsActive.pairProduction ? "e+e- Track Reco" : "H->yy Inactive", expectedValue: "Pair Production Yield > 0", status: params.componentsActive.pairProduction ? "VERIFIED" : "SKIPPED" },
-    { target: "Super-Kamiokande Neutrino Cherenkov Ring", codeValue: `${summary.cherenkovAngleDeg.toFixed(2)}°`, expectedValue: "42° for water medium", status: "VERIFIED" },
-    { target: "ALICE Quark-Gluon Plasma Splitting", codeValue: params.componentsActive.hadronicShower ? "Parton Shower On" : "QGP Inactive", expectedValue: "Hadronic multiplicity scale", status: params.componentsActive.hadronicShower ? "VERIFIED" : "SKIPPED" },
-    { target: "LHCb B-Meson Transition Radiation", codeValue: params.componentsActive.transitionRadiation ? "TRD Emitting" : "TRD Inactive", expectedValue: "Radiative peaks at boundaries", status: params.componentsActive.transitionRadiation ? "VERIFIED" : "SKIPPED" },
-    { target: "Aerogel RICH transparency window", codeValue: `${summary.peakWavelengthNm} nm`, expectedValue: "340 nm - 480 nm peak", status: "VERIFIED" },
-    { target: "Timepix3 silicon pixel cluster limits", codeValue: "Charge Sharing Summed", expectedValue: "Passes hybrid boundary standard", status: "VERIFIED" },
+  // Analytic validation checks: computed by the code, compared with reference values
+  const quartzPreset = MATERIAL_PRESETS.find((m) => m.id === "quartz");
+  const validationChecks: ValidationCheck[] = [
+    {
+      name: "Electron Cherenkov threshold in D2O (n = 1.328)",
+      reference: 0.2656,
+      computed: getCherenkovThresholdEnergy(ELECTRON_MASS_MEV, 1.328),
+      tolerance: 0.002,
+      unit: "MeV",
+      decimals: 4,
+    },
+    {
+      name: "Cherenkov angle, lead glass (beta = 1, n = 1.673)",
+      reference: 53.29,
+      computed: cherenkovAngleDeg(1, 1.673),
+      tolerance: 0.05,
+      unit: "deg",
+      decimals: 2,
+    },
+    {
+      name: "Cherenkov angle, water (beta = 1, n = 1.333)",
+      reference: 41.2,
+      computed: cherenkovAngleDeg(1, 1.333),
+      tolerance: 0.1,
+      unit: "deg",
+      decimals: 2,
+    },
+    {
+      name: "Frank-Tamm photons per particle, electron (beta = 0.8754, n = 1.328, 300-800 nm, 10 mm)",
+      reference: 266,
+      computed: frankTammPhotonsPerMm(0.8754, 1.328, 300, 800) * 10,
+      tolerance: 10,
+      unit: "photons",
+      decimals: 1,
+    },
+    {
+      name: "Fused silica refractive index at 500 nm (293.15 K)",
+      reference: 1.4628,
+      computed: quartzPreset ? getRefractiveIndexAt(500, quartzPreset, 293.15) : NaN,
+      tolerance: 0.001,
+      unit: "",
+      decimals: 4,
+    },
+    {
+      name: "Electron beta at kinetic energy 0.546 MeV",
+      reference: 0.8754,
+      computed: calculateRelativisticBeta(0.546, ELECTRON_MASS_MEV),
+      tolerance: 0.001,
+      unit: "",
+      decimals: 4,
+    },
   ];
+  const passCount = validationChecks.filter(isCheckPass).length;
 
   // Theme support classes
   const cardBg = isDarkMode ? "bg-slate-900/90 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-850";
@@ -258,38 +321,66 @@ export default function ValidationTab({ params, setParams, summary, isDarkMode }
   return (
     <div className="space-y-6" id="validation-tab">
       
-      {/* Simulation peer-reviewed physical database check */}
+      {/* Analytic validation checks */}
       <div className={`border rounded-xl p-5 shadow-lg ${cardBg}`}>
         <div className="flex flex-wrap items-center justify-between border-b border-slate-100/10 pb-3 mb-4 gap-3">
           <div className="flex items-center space-x-2">
             <ShieldCheck className="text-emerald-400 w-5 h-5" />
             <h3 className="text-sm font-semibold uppercase tracking-wider">
-              Peer-Reviewed Physical Benchmark Comparison Studio
+              Analytic Validation Checks
             </h3>
           </div>
           <span className="px-2.5 py-1 bg-emerald-950/40 border border-emerald-500/20 text-[10px] text-emerald-400 font-mono font-bold rounded-full uppercase tracking-wider">
-            Calibration Precision: certified pdg-level accuracy
+            {passCount} of {validationChecks.length} checks pass
           </span>
         </div>
         <p className="text-xs opacity-70 mb-4 font-sans leading-relaxed">
-          The physical simulation outputs and Frank-Tamm integral sweeps are automatically benchmarked against international peer-reviewed particle physics data archives (Particle Data Group standards).
+          Analytic checks comparing the code to reference values computed from standard formulas. Tolerances are shown.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {benchmarkRuns.map((test, index) => (
-            <div key={index} className={`flex justify-between items-center border p-3 rounded-lg text-xs font-mono ${isDarkMode ? "bg-slate-950/60 border-slate-800" : "bg-slate-50/60 border-slate-150"}`}>
-              <div className="space-y-0.5 max-w-[70%]">
-                <span className="text-[10px] text-slate-500 block uppercase tracking-wide font-sans">{test.target}</span>
-                <span className="font-semibold text-[11px] truncate block">{test.codeValue}</span>
+          {validationChecks.map((check, index) => {
+            const pass = isCheckPass(check);
+            return (
+              <div key={index} className={`flex justify-between items-center border p-3 rounded-lg text-xs font-mono ${isDarkMode ? "bg-slate-950/60 border-slate-800" : "bg-slate-50/60 border-slate-150"}`}>
+                <div className="space-y-0.5 max-w-[70%]">
+                  <span className="text-[10px] text-slate-500 block tracking-wide font-sans">{check.name}</span>
+                  <span className="font-semibold text-[11px] block">
+                    Computed: {Number.isFinite(check.computed) ? check.computed.toFixed(check.decimals) : "n/a"} {check.unit}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className={`px-2 py-0.5 border text-[10px] rounded-md font-bold ${pass ? "bg-emerald-950/30 text-emerald-400 border-emerald-500/20" : "bg-red-950/30 text-red-400 border-red-500/20"}`}>
+                    {pass ? "PASS" : "FAIL"}
+                  </span>
+                  <span className="block text-[9px] text-slate-500 mt-0.5 font-sans whitespace-nowrap">
+                    Ref: {check.reference} {check.unit} ± {check.tolerance}
+                  </span>
+                </div>
               </div>
-              <div className="text-right">
-                <span className="px-2 py-0.5 bg-emerald-950/30 text-emerald-400 border border-emerald-500/20 text-[10px] rounded-md font-bold">
-                  {test.status}
-                </span>
-                <span className="block text-[9px] text-slate-500 mt-0.5 font-sans whitespace-nowrap">Ref: {test.expectedValue}</span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Live simulation values (current run, not a validation) */}
+      <div className={`border rounded-xl p-4 shadow-lg ${cardBg}`}>
+        <div className="text-[10px] font-bold uppercase tracking-wider opacity-70 mb-3">
+          Live simulation (current run, not a validation check)
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs">
+          <div>
+            <span className="block text-[9px] text-slate-500 uppercase font-sans">Beta (live)</span>
+            <span className="font-bold">{summary.beta.toFixed(5)}</span>
+          </div>
+          <div>
+            <span className="block text-[9px] text-slate-500 uppercase font-sans">Cherenkov angle (live)</span>
+            <span className="font-bold">{summary.cherenkovAngleDeg.toFixed(2)} deg</span>
+          </div>
+          <div>
+            <span className="block text-[9px] text-slate-500 uppercase font-sans">Threshold energy (live)</span>
+            <span className="font-bold">{summary.cherenkovThresholdEnergyMeV.toFixed(4)} MeV</span>
+          </div>
         </div>
       </div>
 
@@ -378,7 +469,7 @@ export default function ValidationTab({ params, setParams, summary, isDarkMode }
 
           <div className="grid grid-cols-2 gap-2 mt-4 text-xs font-semibold">
             <button
-              onClick={() => appendNoteText(`* Frank-Tamm integrated sweep: ${summary.totalPhotonsEmitted} theoretical emitted photons/cm.`)}
+              onClick={() => appendNoteText(`* Frank-Tamm photons per particle (300-800 nm): ${summary.photonsPerParticle} per mm.`)}
               className={`py-1.5 border hover:border-purple-600 rounded-lg transition font-mono text-[10px] cursor-pointer ${btnSec}`}
             >
               + Emitted Photons Sweep
@@ -406,7 +497,7 @@ export default function ValidationTab({ params, setParams, summary, isDarkMode }
                <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Energy Spectrum Histogram</span>
                <div className="h-32 w-full flex items-end space-x-1">
                   {[...Array(20)].map((_, i) => (
-                     <div key={i} className="flex-1 bg-teal-500/80 rounded-t" style={{ height: `${Math.max(10, Math.random() * (100 - Math.abs(10-i)*8))}%` }}></div>
+                     <div key={i} className="flex-1 bg-teal-500/80 rounded-t" style={{ height: `${Math.max(10, 100 - Math.abs(10 - i) * 8)}%` }}></div>
                   ))}
                </div>
                <div className="flex justify-between text-[8px] font-mono opacity-60">

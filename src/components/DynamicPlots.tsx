@@ -91,7 +91,10 @@ export default React.memo(function DynamicPlots({ spectra, summary, detector, be
       ctx.stroke();
 
       ctx.fillStyle = isDarkMode ? "rgba(249, 115, 22, 0.95)" : "rgba(249, 115, 22, 0.85)";
-      const activePixelsCount = Math.floor(summary.totalPhotonsDetected / 3) + 6;
+      // Drawn hit count follows photons per particle, clamped to 6-400 for display
+      const activePixelsCount = Number.isFinite(summary.photonsPerParticle)
+        ? Math.min(400, Math.max(6, Math.round(summary.photonsPerParticle)))
+        : 6;
       for (let p = 0; p < activePixelsCount; p++) {
         const angle = (p / activePixelsCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
         const offsetR = radius + (Math.random() - 0.5) * (detector.chargeSharingActive ? 12 : 5);
@@ -246,7 +249,7 @@ export default React.memo(function DynamicPlots({ spectra, summary, detector, be
   const snrAnalysisData = useMemo(() => {
     const thresholds = Array.from({ length: 15 }, (_, i) => 0.5 + i * 0.3);
     return thresholds.map(threshold => {
-      const signal = summary.totalPhotonsEmitted * (1 - threshold * 0.1);
+      const signal = summary.photonsPerParticle * (1 - threshold * 0.1);
       const noise = detector.noiseRmsKeV * 100 * (1 + threshold * 0.2);
       const snr = 10 * Math.log10(Math.max(signal / noise, 0.01));
       return {
@@ -256,7 +259,7 @@ export default React.memo(function DynamicPlots({ spectra, summary, detector, be
         snrDb: snr.toFixed(1),
       };
     });
-  }, [summary.totalPhotonsEmitted, detector.noiseRmsKeV]);
+  }, [summary.photonsPerParticle, detector.noiseRmsKeV]);
 
   const angularDistributionData = useMemo(() => {
     const angles = Array.from({ length: 36 }, (_, i) => i * 10);
@@ -347,6 +350,10 @@ export default React.memo(function DynamicPlots({ spectra, summary, detector, be
   return (
     <div className={`border rounded-xl p-5 shadow-lg flex flex-col transition overflow-visible ${panelBg}`} id="plots-panel">
       
+      <p className={`text-[10px] font-mono mb-3 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+        Illustrative display: random sampling for visual effect. Quantitative values are in the summary panels.
+      </p>
+
       <div className="flex items-center space-x-2 border-b border-slate-100/10 pb-3 mb-4">
         <Activity className="text-orange-500 w-5 h-5" />
         <h2 className="text-xs font-extrabold font-sans tracking-tight uppercase">
@@ -541,8 +548,8 @@ export default React.memo(function DynamicPlots({ spectra, summary, detector, be
             <span className="text-sm font-bold text-orange-500">{summary.peakWavelengthNm} nm</span>
           </div>
           <div className={`font-mono text-center flex flex-col items-center justify-center border-t sm:border-t-0 sm:border-l ${footerBorder}`}>
-            <span className="block text-[9px] opacity-60 uppercase tracking-widest font-bold mb-1">Total Emitted Rate</span>
-            <span className="text-sm font-bold text-orange-500">{summary.totalPhotonsEmitted.toLocaleString()} / cm</span>
+            <span className="block text-[9px] opacity-60 uppercase tracking-widest font-bold mb-1">Total Emitted (per run)</span>
+            <span className="text-sm font-bold text-orange-500">{summary.totalPhotonsEmitted.toLocaleString()}</span>
           </div>
           <div className={`font-mono text-center flex flex-col items-center justify-center border-t sm:border-t-0 sm:border-l ${footerBorder}`}>
             <span className="block text-[9px] opacity-60 uppercase tracking-widest font-bold mb-1">Simulated SNR</span>

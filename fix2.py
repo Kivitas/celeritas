@@ -1,9 +1,0 @@
-f=open("src/App.tsx","rb"
-data=f.read().decode("utf-8","replace")  
-f.close()  
-data=data.replace("<section","<div")  
-data=data.replace("</section>","</div>")  
-f=open("src/App.tsx","wb")  
-f.write(data.encode("utf-8"))  
-f.close()  
-"done"  

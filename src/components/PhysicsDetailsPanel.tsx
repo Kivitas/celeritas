@@ -6,6 +6,13 @@
 import React from "react";
 import { SimulationParams, SimulationSummary, MaterialPreset } from "../types";
 import { Atom, Zap, Radio, Flame, Sun, Waves, CircleDot, Bomb, Sparkles, Activity } from "lucide-react";
+import {
+  calculateEffectiveAttenuation,
+  getMediumCoefficients,
+  larmorRadiusM,
+  momentumMeV,
+  synchrotronCriticalEnergyKeV,
+} from "../core/physics";
 
 interface PhysicsDetailsPanelProps {
   params: SimulationParams;
@@ -49,6 +56,23 @@ export default function PhysicsDetailsPanel({ params, summary, isDarkMode, activ
   const textTitle = isDarkMode ? "text-slate-100" : "text-slate-800";
   const textLabel = isDarkMode ? "text-slate-400" : "text-slate-500";
 
+  // Real formulas for the synchrotron, radius and attenuation values
+  const hasField = params.magneticFieldTesla > 0;
+  const particleMassMeV = params.isotopeId === "proton_sps" ? 938.272088 : 0.51099895;
+  const radiusText = hasField
+    ? `${larmorRadiusM(momentumMeV(params.beamEnergyMeV, particleMassMeV), params.magneticFieldTesla).toPrecision(4)} m`
+    : "n/a";
+  const criticalEnergyText = hasField
+    ? `${synchrotronCriticalEnergyKeV(params.beamEnergyMeV / 1000, params.magneticFieldTesla).toFixed(2)} keV`
+    : "n/a";
+  const { mu_a, mu_s } = getMediumCoefficients(500, activeMaterialPreset.id);
+  const muEffPerMm = calculateEffectiveAttenuation(mu_a, mu_s, activeMaterialPreset.anisotropyG);
+  const attenuationLengthText = !Number.isFinite(muEffPerMm)
+    ? "n/a"
+    : muEffPerMm <= 0
+      ? "infinite"
+      : `${(10 / muEffPerMm).toFixed(1)} cm`;
+
   return (
     <div className={`border rounded-xl p-6 shadow-lg ${cardBg}`}>
       <div className="flex items-center space-x-2 mb-4 border-b border-slate-800/50 pb-3">
@@ -84,9 +108,9 @@ export default function PhysicsDetailsPanel({ params, summary, isDarkMode, activ
               </span>
             </div>
             <div>
-              <span className={`block ${textLabel}`}>Photon Yield</span>
+              <span className={`block ${textLabel}`}>Photons / particle</span>
               <span className={`font-bold ${isDarkMode ? "text-blue-400" : "text-blue-600"}`}>
-                {summary.totalPhotonsEmitted.toLocaleString()} /cm
+                {summary.photonsPerParticle.toLocaleString()}
               </span>
             </div>
             <div>
@@ -128,8 +152,6 @@ export default function PhysicsDetailsPanel({ params, summary, isDarkMode, activ
           </p>
           <ul className={`mt-1 space-y-1 text-[9px] ${textLabel}`}>
             <li>• <span className={`font-bold ${isDarkMode ? "text-red-400" : "text-red-600"}`}>High-Z materials</span> (Pb, W) - scales as Z²</li>
-            <li>• <span className={`font-bold ${isDarkMode ? "text-red-400" : "text-red-600"}`}>Initial entry point</span> - first {(params.radiatorThicknessMm * 0.1).toFixed(1)} mm</li>
-            <li>• <span className={`font-bold ${isDarkMode ? "text-red-400" : "text-red-600"}`}>Critical energy</span> ~{(params.beamEnergyMeV * 0.15).toFixed(2)} MeV for this radiator</li>
           </ul>
         </div>
 
@@ -146,7 +168,6 @@ export default function PhysicsDetailsPanel({ params, summary, isDarkMode, activ
           </p>
           <ul className={`mt-1 space-y-1 text-[9px] ${textLabel}`}>
             <li>• <span className={`font-bold ${isDarkMode ? "text-purple-400" : "text-purple-600"}`}>Peak wavelength</span> ~{params.nanoparticlePeakNm} nm (if dopants active)</li>
-            <li>• <span className={`font-bold ${isDarkMode ? "text-purple-400" : "text-purple-600"}`}>Decay time</span> ~{(params.radiatorThicknessMm * 0.05).toFixed(1)}-{(params.radiatorThicknessMm * 0.2).toFixed(1)} ns</li>
             <li>• <span className={`font-bold ${isDarkMode ? "text-purple-400" : "text-purple-600"}`}>Light yield</span> proportional to deposited energy dE/dx</li>
           </ul>
         </div>
@@ -165,7 +186,7 @@ export default function PhysicsDetailsPanel({ params, summary, isDarkMode, activ
           <ul className={`mt-1 space-y-1 text-[9px] ${textLabel}`}>
             <li>• <span className={`font-bold ${isDarkMode ? "text-teal-400" : "text-teal-600"}`}>UV range</span> (300-400 nm) - scattering enhanced 10-100x</li>
             <li>• <span className={`font-bold ${isDarkMode ? "text-teal-400" : "text-teal-600"}`}>Colloidal media</span> - depends on particle size distribution</li>
-            <li>• <span className={`font-bold ${isDarkMode ? "text-teal-400" : "text-teal-600"}`}>Attenuation length</span> ~{(100 / (params.radiatorThicknessMm + 1)).toFixed(1)} cm</li>
+            <li>• <span className={`font-bold ${isDarkMode ? "text-teal-400" : "text-teal-600"}`}>Attenuation length</span> ~{attenuationLengthText} (at 500 nm)</li>
           </ul>
         </div>
 
@@ -181,9 +202,7 @@ export default function PhysicsDetailsPanel({ params, summary, isDarkMode, activ
             Inelastic scattering of photons by quasi-free electrons. Klein-Nishina cross-section dominates at:
           </p>
           <ul className={`mt-1 space-y-1 text-[9px] ${textLabel}`}>
-            <li>• <span className={`font-bold ${isDarkMode ? "text-amber-400" : "text-amber-600"}`}>Photon energies</span> greater than {(params.beamEnergyMeV * 0.1).toFixed(2)} MeV</li>
             <li>• <span className={`font-bold ${isDarkMode ? "text-amber-400" : "text-amber-600"}`}>Scattering angle</span> maximum at 90° in lab frame</li>
-            <li>• <span className={`font-bold ${isDarkMode ? "text-amber-400" : "text-amber-600"}`}>Energy transfer</span> ΔE/E ~{(1 - Math.cos(90 * Math.PI / 180)).toFixed(3)} at 90°</li>
           </ul>
         </div>
 
@@ -199,9 +218,7 @@ export default function PhysicsDetailsPanel({ params, summary, isDarkMode, activ
             Complete photon absorption with electron ejection. Dominant at:
           </p>
           <ul className={`mt-1 space-y-1 text-[9px] ${textLabel}`}>
-            <li>• <span className={`font-bold ${isDarkMode ? "text-indigo-400" : "text-indigo-600"}`}>Low energies</span> {(params.beamEnergyMeV * 0.05).toFixed(2)} MeV</li>
             <li>• <span className={`font-bold ${isDarkMode ? "text-indigo-400" : "text-indigo-600"}`}>High-Z media</span> - cross-section proportional to Z^4-5</li>
-            <li>• <span className={`font-bold ${isDarkMode ? "text-indigo-400" : "text-indigo-600"}`}>Edge energies</span> K-shell binding ~{(activeMaterialPreset.refractiveIndexStatic * 10).toFixed(1)} keV</li>
           </ul>
         </div>
 
@@ -218,7 +235,6 @@ export default function PhysicsDetailsPanel({ params, summary, isDarkMode, activ
           </p>
           <ul className={`mt-1 space-y-1 text-[9px] ${textLabel}`}>
             <li>• <span className={`font-bold ${isDarkMode ? "text-pink-400" : "text-pink-600"}`}>Lorentz factor</span> γ = {(1 + params.beamEnergyMeV / 0.511).toFixed(1)} (relativistic)</li>
-            <li>• <span className={`font-bold ${isDarkMode ? "text-pink-400" : "text-pink-600"}`}>Photon energy</span> ~{(params.beamEnergyMeV * 0.01).toFixed(2)} MeV in X-ray band</li>
             <li>• <span className={`font-bold ${isDarkMode ? "text-pink-400" : "text-pink-600"}`}>Angular spread</span> ~1/γ = {(1 / (1 + params.beamEnergyMeV / 0.511)).toFixed(4)} rad</li>
           </ul>
         </div>
@@ -236,8 +252,8 @@ export default function PhysicsDetailsPanel({ params, summary, isDarkMode, activ
               Curvature radiation in magnetic field B = {params.magneticFieldTesla} T:
             </p>
             <ul className={`mt-1 space-y-1 text-[9px] ${textLabel}`}>
-              <li>• <span className={`font-bold ${isDarkMode ? "text-violet-400" : "text-violet-600"}`}>Critical energy</span> ~{(params.magneticFieldTesla * params.beamEnergyMeV * 0.001).toFixed(2)} keV</li>
-              <li>• <span className={`font-bold ${isDarkMode ? "text-violet-400" : "text-violet-600"}`}>Radius of curvature</span> ρ = {(params.beamEnergyMeV / (0.3 * params.magneticFieldTesla)).toFixed(2)} m</li>
+              <li>• <span className={`font-bold ${isDarkMode ? "text-violet-400" : "text-violet-600"}`}>Critical energy</span> {criticalEnergyText}</li>
+              <li>• <span className={`font-bold ${isDarkMode ? "text-violet-400" : "text-violet-600"}`}>Radius of curvature</span> ρ = {radiusText}</li>
               <li>• <span className={`font-bold ${isDarkMode ? "text-violet-400" : "text-violet-600"}`}>Power loss</span> P proportional to gamma^4/rho^2</li>
             </ul>
           </div>

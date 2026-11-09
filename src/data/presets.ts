@@ -29,8 +29,8 @@ export const ISOTOPE_PRESETS: IsotopeProfile[] = [
   },
   {
     id: "co60",
-    name: "Cobalt-60 / Compton Recoil [Compton Scattering e-]",
-    type: "beta-",
+    name: "Cobalt-60 Compton-edge recoil electrons [1.173 MeV gamma]",
+    type: "e-",
     baseEnergyMeV: 0.963,
     fluxIntensity: 850000,
     pdgId: 11,

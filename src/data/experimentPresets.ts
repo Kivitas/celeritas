@@ -5,7 +5,6 @@
 
 import { SimulationParams, DetectorSettings, MaterialPreset, IsotopeProfile } from "../types";
 import { MATERIAL_PRESETS } from "./presets";
-import { DETECTOR_PRESETS } from "./detectorPresets";
 import { ISOTOPE_PRESETS } from "./presets";
 
 export interface ExperimentPreset {

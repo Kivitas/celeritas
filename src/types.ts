@@ -216,11 +216,15 @@ export interface SimulationSummary {
   betaThreshold: number; // Cherenkov threshold velocity
   isCherenkovGenerated: boolean;
   cherenkovAngleDeg: number;
+  // Units convention: totalPhotonsEmitted / totalPhotonsDetected are PER RUN
+  // (per-particle value * numberFiredParticles). Detected photons include detector QE and DAQ deadtime.
   totalPhotonsEmitted: number;
   totalPhotonsDetected: number;
+  // Per particle: Frank-Tamm primary + secondary Cherenkov photons (Z^2 included), before optical transport.
+  photonsPerParticle: number;
   peakWavelengthNm: number;
+  // 10*log10(S / sqrt(S + B)) with S = detected photons per run, B = dark counts per run. 0 when no signal.
   signalToNoiseRatioDb: number;
-  optimalDetectorConfig: string;
   cherenkovThresholdEnergyMeV: number;
 
   // Highly advanced custom thermodynamic & collision parameters
@@ -249,16 +253,3 @@ export interface BatchRow {
   photonYield?: number;
 }
 
-export interface CorrelationItem {
-  paramA: string;
-  paramB: string;
-  rValue: number;
-}
-
-export interface SensitivityMetric {
-  parameter: string;
-  sobolFirstOrder: number; // Sobol sensitivity index
-  sobolTotalOrder: number;
-  lowValue: number;
-  highValue: number;
-}

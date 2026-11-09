@@ -3,7 +3,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { SimulationParams, SimulationResultPoint, SimulationSummary, IsotopeProfile, MaterialPreset } from "../types";
+/**
+ * Cherenkov emission model.
+ *
+ * Assumptions (this is a simplified model, not a full Monte Carlo):
+ *  - Single-slab radiator of thickness d = radiatorThicknessMm, with a single refractive index
+ *    profile per material (Sellmeier dispersion plus a linear thermal term).
+ *  - Cherenkov photons are emitted uniformly along the emission length L = min(trackLength, d),
+ *    and transported to the detector with the path-averaged transmission for that slab.
+ *  - The Cherenkov threshold uses the refractive index at 500 nm (reference wavelength) at the
+ *    chamber temperature.
+ *  - Bremsstrahlung, fluorescence, Compton and transition-radiation channels are heuristic
+ *    scalings, not first-principles calculations.
+ *  - Summary totals are per run (per-particle value times numberFiredParticles); spectra are per particle.
+ */
+
+import { SimulationParams, SimulationResultPoint, SimulationSummary, IsotopeProfile, MaterialPreset, DetectorSettings } from "../types";
 
 // Standard atomic and particle physics constants
 export const SPEED_OF_LIGHT = 299792458; // m/s
@@ -20,11 +35,15 @@ export const PION_MASS_MEV = 139.57039; // Pion+ rest mass
 export const STANDARD_TEMP_K = 293.15; // Standard room temperature (20°C)
 export const REFRACTIVE_INDEX_MIN = 1.0001; // Minimum physical refractive index
 export const THERMAL_COEFFICIENT_DN_DT = -1.4e-4; // Index degradation per Kelvin
-export const BOILING_THRESHOLD_K = 328.15; // Boiling threshold
-export const CRYOGENIC_THRESHOLD_K = 80.0; // Cryogenic phase threshold
+export const BOILING_THRESHOLD_K = 328.15; // Boiling threshold (informational flag only)
+export const CRYOGENIC_THRESHOLD_K = 80.0; // Cryogenic phase threshold (informational flag only)
+export const THRESHOLD_REFERENCE_WAVELENGTH_NM = 500; // Reference wavelength for the Cherenkov threshold
 
 // Simulation constants
 export const MAX_BETA = 0.999999; // Maximum relativistic beta
+export const MAX_SPECTRAL_POINTS = 5000; // Upper bound on wavelength grid size
+export const DEFAULT_BIN_RESOLUTION_NM = 10; // Fallback wavelength bin width
+export const DEFAULT_FIRED_PARTICLES = 100; // Fallback particle count per run
 export const SECONDARY_CHERENKOV_FACTOR = 0.12; // Secondary Cherenkov cascade factor
 export const BREMSSTRAHLUNG_COEFFICIENT = 6.5e-4; // Bremsstrahlung coefficient
 export const RAYLEIGH_SCATTERING_BASE_NM = 400.0; // Base wavelength for Rayleigh scattering
@@ -34,11 +53,16 @@ export const TRANSITION_RADIATION_PEAK_NM = 310.0; // Transition radiation peak
 export const TRANSITION_RADIATION_THRESHOLD_GAMMA = 2.0; // Gamma threshold for transition radiation
 
 // Detector and safety constants
-export const BASE_NOISE_RMS = 2.4; // Base noise for SNR calculation
-export const MIN_SNR_DB = 1.0; // Minimum SNR in dB
+export const BASE_NOISE_RMS = 2.4; // Legacy noise constant (no longer used by the SNR model)
+export const MIN_SNR_DB = 1.0; // Legacy minimum SNR constant (no longer used by the SNR model)
 export const FLUENCE_ERROR_BASE = 1.12; // Base fluence error
 export const COLLISION_MFP_BASE = 12.5; // Base mean free path for collisions
 export const RADIATION_LOSS_COEFFICIENT = 0.045; // Radiation loss coefficient
+
+/** Elementary charge-independent constant used in Larmor / synchrotron formulas (0.3 * B * rho = p in GeV/c). */
+const LARMOR_FACTOR = 0.3;
+/** Synchrotron critical energy coefficient for electrons: eps_c = 665 * E^2[GeV] * B[T] keV. */
+const SYNCHROTRON_CRITICAL_COEFF_KEV = 665;
 
 /**
  * Calculates relativistic Beta (v/c) for a given kinetic energy and particle rest mass.
@@ -52,9 +76,57 @@ export function calculateRelativisticBeta(energyMeV: number, particleMassMeV: nu
 }
 
 /**
+ * Relativistic momentum p = sqrt(T^2 + 2 T m) in MeV/c, for kinetic energy T and rest mass m (MeV/c^2).
+ */
+export function momentumMeV(kineticMeV: number, massMeV: number): number {
+  return Math.sqrt(kineticMeV * kineticMeV + 2 * kineticMeV * massMeV);
+}
+
+/**
+ * Larmor (gyro) radius in metres for a charged particle of momentum p (MeV/c) in a field B (T).
+ * rho [m] = p[GeV/c] / (0.3 * B). Returns Infinity when B <= 0.
+ */
+export function larmorRadiusM(momentumMeVc: number, magneticFieldT: number): number {
+  if (!(magneticFieldT > 0)) return Infinity;
+  const pGeV = momentumMeVc / 1000;
+  return pGeV / (LARMOR_FACTOR * magneticFieldT);
+}
+
+/**
+ * Synchrotron critical energy in keV for an electron of energy E (GeV) in a field B (T):
+ * eps_c = 665 * E^2 * B keV.
+ */
+export function synchrotronCriticalEnergyKeV(energyGeV: number, magneticFieldT: number): number {
+  return SYNCHROTRON_CRITICAL_COEFF_KEV * energyGeV * energyGeV * magneticFieldT;
+}
+
+/**
+ * Analytic Frank-Tamm photon yield per particle per mm of path (Z = 1), integrated over [startNm, endNm]:
+ *   N/L = 2 * pi * alpha * (1/lambda1 - 1/lambda2) * (1 - 1/(beta^2 n^2))   [per metre]
+ * Returned in photons per mm. Returns 0 when beta * n <= 1 (below threshold).
+ */
+export function frankTammPhotonsPerMm(beta: number, refractiveIndex: number, startNm: number, endNm: number): number {
+  const betaN = beta * refractiveIndex;
+  if (!(betaN > 1) || !(startNm > 0) || !(endNm > startNm)) return 0;
+  const invLambda1 = 1 / (startNm * 1e-9);
+  const invLambda2 = 1 / (endNm * 1e-9);
+  const perMetre = 2 * Math.PI * FINE_STRUCTURE_CONSTANT * (invLambda1 - invLambda2) * (1 - 1 / (betaN * betaN));
+  return perMetre / 1000;
+}
+
+/**
+ * Cherenkov emission angle in degrees: cos(theta) = 1 / (beta n). Returns 0 when beta * n <= 1.
+ */
+export function cherenkovAngleDeg(beta: number, refractiveIndex: number): number {
+  const betaN = beta * refractiveIndex;
+  if (!(betaN > 1)) return 0;
+  return Math.acos(1 / betaN) * (180.0 / Math.PI);
+}
+
+/**
  * Analytical model of wavelength-dependent refractive index using Sellmeier dispersion.
- * Now dynamic with temperature K. High temp lowers refractive index, low temperature increases it slightly,
- * and extreme anomalous ranges break the standard lattices.
+ * Temperature enters only through the linear model n(T) = n_ref(lambda) + dn/dT * (T - 293.15),
+ * clamped to REFRACTIVE_INDEX_MIN. The boiling / cryogenic thresholds are informational only.
  */
 export function getRefractiveIndexAt(wavelengthNm: number, preset: MaterialPreset, tempK: number = 293.15): number {
   const wlUm = wavelengthNm / 1000.0; // Sellmeier formulas use micrometers
@@ -74,19 +146,10 @@ export function getRefractiveIndexAt(wavelengthNm: number, preset: MaterialPrese
     // Dispersion falloff approximation if Sellmeier parameters are missing
     n = preset.refractiveIndexStatic + (1500.0 / (wavelengthNm * wavelengthNm));
   }
-  
-  // Thermodynamic index of refraction drift: n(T) = n_0 + deltaT * dn/dT
+
+  // Linear thermal drift: n(T) = n_ref + dn/dT * (T - 293.15)
   const deltaT = tempK - STANDARD_TEMP_K;
   n = n + (deltaT * THERMAL_COEFFICIENT_DN_DT);
-
-  // Extreme temperatures trigger physical threshold breakdowns
-  if (tempK > BOILING_THRESHOLD_K) {
-    // Boiling threshold breakdown: index drops drastically and gains turbulent noise
-    n = n * 0.94;
-  } else if (tempK < CRYOGENIC_THRESHOLD_K) {
-    // Cryogenic phase crystallisation threshold break: refractive index freezes into anomalous spikes
-    n = n * 1.05;
-  }
 
   return Math.max(REFRACTIVE_INDEX_MIN, n);
 }
@@ -98,7 +161,7 @@ export function getRefractiveIndexAt(wavelengthNm: number, preset: MaterialPrese
 export function getMediumCoefficients(wavelengthNm: number, materialId: string): { mu_a: number; mu_s: number } {
   let mu_a = 0.05;
   let mu_s = 5.0;
-  
+
   if (materialId === "water") {
     // Water has extremely high UV-blue transparency, absorbing mostly in the infra-red
     mu_a = 0.00001 + (wavelengthNm > 600 ? 0.001 * Math.pow((wavelengthNm - 600) / 100, 2) : 0);
@@ -149,15 +212,38 @@ export function calculateEffectiveAttenuation(mu_a: number, mu_s: number, g: num
 }
 
 /**
- * Runs physical spectrometry and cherenkov emissions models.
+ * Path-averaged transmission for photons emitted uniformly over [0, L] in a slab of thickness d:
+ *   T_avg = exp(-mu d) * (exp(mu L) - 1) / (mu L)
+ * Evaluated as exp(-mu (d - L)) * (1 - exp(-mu L)) / (mu L), which is the same value without overflow.
+ * mu in mm^-1, lengths in mm. Falls back to exp(-mu d) when mu * L is negligible.
+ */
+function pathAveragedTransmission(mu: number, emissionLengthMm: number, thicknessMm: number): number {
+  const x = mu * emissionLengthMm;
+  if (x > 1e-9) {
+    return Math.exp(-mu * (thicknessMm - emissionLengthMm)) * (-Math.expm1(-x)) / x;
+  }
+  return Math.exp(-mu * thicknessMm);
+}
+
+function clamp01(v: number): number {
+  return Math.min(1, Math.max(0, v));
+}
+
+/**
+ * Runs Cherenkov emission and transport models.
+ *
+ * Returned spectra are per particle. Summary totals (totalPhotonsEmitted, totalPhotonsDetected) are per run,
+ * i.e. the per-particle value times numberFiredParticles. The optional detector applies quantum efficiency
+ * and the DAQ deadtime to detected (not emitted) photons.
  */
 export function runCherenkovSimulation(
   params: SimulationParams,
   materialPreset: MaterialPreset,
-  isotopePreset: IsotopeProfile | undefined
+  isotopePreset: IsotopeProfile | undefined,
+  detector?: DetectorSettings
 ): { spectra: SimulationResultPoint[]; summary: SimulationSummary } {
   const points: SimulationResultPoint[] = [];
-  
+
   // Decide particle rest mass based on physics standard profiles or custom mass
   let massMeV = ELECTRON_MASS_MEV;
   if (params.isotopeId === "custom") {
@@ -173,7 +259,7 @@ export function runCherenkovSimulation(
     else if (isotopePreset.type === "meson") massMeV = PION_MASS_MEV;
     else if (isotopePreset.id === "muon_cosmic" || isotopePreset.type === "custom") massMeV = MUON_MASS_MEV;
   }
-  
+
   // Apply scalable energy units (GeV, TeV) converting safely to standard internal MeV metric
   let E_beam = params.beamEnergyMeV;
   if (params.energyUnit === "GeV") {
@@ -184,21 +270,45 @@ export function runCherenkovSimulation(
 
   const beta = calculateRelativisticBeta(E_beam, massMeV);
   const gamma = 1 + (E_beam / massMeV);
-  
-  // Physics particle flux values and target thickness parameters
-  const flux = params.intensityFlux; // particles/cm^2/s
-  const depthMm = params.radiatorThicknessMm; // target thickness (mapped internally)
 
-  let totalPhotonsEmitted = 0;
-  let totalPhotonsDetected = 0;
+  const depthMm = params.radiatorThicknessMm; // radiator thickness d (mm)
+  const firedParticles = Number.isFinite(params.numberFiredParticles) && params.numberFiredParticles > 0
+    ? params.numberFiredParticles
+    : DEFAULT_FIRED_PARTICLES;
+
+  // Emission length: photons can only be produced inside the radiator
+  const trackMm = params.trackLengthMm !== undefined ? params.trackLengthMm : 10.0;
+  const emissionLengthMm = Math.max(0, Math.min(trackMm, depthMm));
+  const dxMeters = emissionLengthMm / 1000.0;
+
+  // Detector coupling applies to detected photons only
+  let detectionFactor = 1.0;
+  if (detector) {
+    const qe = clamp01((detector.quantumEfficiencyPct || 0) / 100);
+    const deadFactor = params.daq ? 1 - clamp01(params.daq.deadtimeFraction || 0) : 1;
+    detectionFactor = qe * deadFactor;
+  }
+
+  let perParticleEmitted = 0;
+  let perParticleDetected = 0;
+  let perParticlePhotons = 0;
   let maxWavelength = 300;
   let maxWavelengthYield = -1;
 
   const g = materialPreset.anisotropyG;
 
-  const binWidth = params.binResolutionNm;
+  // Wavelength grid: guard against non-finite / non-positive bin widths and unbounded grids
+  let binWidth = Number.isFinite(params.binResolutionNm) && params.binResolutionNm > 0
+    ? params.binResolutionNm
+    : DEFAULT_BIN_RESOLUTION_NM;
   const start = params.spectralRangeStartNm;
   const end = params.spectralRangeEndNm;
+  const span = end - start;
+  let nPoints = Number.isFinite(span) && span >= 0 ? Math.floor(span / binWidth) + 1 : 0;
+  if (nPoints > MAX_SPECTRAL_POINTS) {
+    binWidth = span / (MAX_SPECTRAL_POINTS - 1);
+    nPoints = Math.min(MAX_SPECTRAL_POINTS, Math.floor(span / binWidth) + 1);
+  }
 
   let generatesCherenkov = false;
   let sumAngles = 0;
@@ -210,79 +320,76 @@ export function runCherenkovSimulation(
     zVal = params.customChargeE !== undefined ? params.customChargeE : 1;
   }
   const zSq = Math.pow(zVal, 2);
-  
-  // Track length segment dx (meters)
-  const dxMeters = (params.trackLengthMm !== undefined ? params.trackLengthMm : 10.0) / 1000.0;
-  
+
   // Divergence peak smearing loss factor
   const divLoss = Math.exp(-(params.beamDivergenceMrad || 0) * 0.001);
 
-  // Thermodynamic anomalies tracking
-  const chamberTemp = params.chamberTemperatureK || 293.15;
-  const isThermalAnomaly = chamberTemp > 328.15 || chamberTemp < 80.0;
-  const thermalDeviationPct = ((chamberTemp - 293.15) / 293.15) * 100;
-  const hasPositiveBreak = chamberTemp > 328.15;
-  const hasNegativeBreak = chamberTemp < 80.0;
+  // Thermodynamic anomaly flags (informational)
+  const chamberTemp = params.chamberTemperatureK || STANDARD_TEMP_K;
+  const isThermalAnomaly = chamberTemp > BOILING_THRESHOLD_K || chamberTemp < CRYOGENIC_THRESHOLD_K;
+  const thermalDeviationPct = ((chamberTemp - STANDARD_TEMP_K) / STANDARD_TEMP_K) * 100;
+  const hasPositiveBreak = chamberTemp > BOILING_THRESHOLD_K;
+  const hasNegativeBreak = chamberTemp < CRYOGENIC_THRESHOLD_K;
 
-  for (let lambda = start; lambda <= end; lambda += binWidth) {
+  for (let i = 0; i < nPoints; i++) {
+    const lambda = start + i * binWidth;
     const n = getRefractiveIndexAt(lambda, materialPreset, chamberTemp);
-    
-    // 1. Frank-Tamm Relativistic Cherenkov Emission Formula
+
+    // 1. Frank-Tamm Relativistic Cherenkov Emission Formula (per particle)
     // d^2N / (dx d\lambda) = (2 * \pi * \alpha / \lambda^2) * (1 - 1 / (\beta^2 * n^2)) * Z^2 * divergence_factors
     let primaryYield = 0;
     const betaN = beta * n;
-    
+
     if (betaN > 1.0) {
       generatesCherenkov = true;
       const factor = 1.0 - (1.0 / (betaN * betaN));
       const lambdaMeters = lambda * 1e-9;
       const binMeters = binWidth * 1e-9;
-      
+
       primaryYield = ((2.0 * Math.PI * FINE_STRUCTURE_CONSTANT * dxMeters) / Math.pow(lambdaMeters, 2)) * factor * binMeters * zSq * divLoss;
     }
-    
-    // Scale theoretical single-particle yield by total isotope beam flux intensity
-    primaryYield = primaryYield * (flux / 1e5); 
 
     // 2. Secondary Cherenkov Cascades (delta-ray recoil electrons)
     const secondaryYield = primaryYield * SECONDARY_CHERENKOV_FACTOR * Math.log(1.0 + E_beam / 25.0);
 
-    // 3. Ultra-relativistic Bremsstrahlung Radiator Model (Kramers 1/E profiles scaled for high-Z target nuclei)
+    // 3. Bremsstrahlung radiator model
+    // heuristic model, not a first-principles calculation
     let bremsYield = 0;
     if (params.componentsActive.bremsstrahlung) {
       const zFactor = (params.isotopeId === "custom" ? zVal : (isotopePreset?.type === "heavy-ion" ? 3.0 : 1.0));
       // Enhanced Bremsstrahlung model with Z^2 dependence and energy scaling
       const screeningFactor = Math.log(183 * Math.pow(zFactor, -1/3));
-      bremsYield = (BREMSSTRAHLUNG_COEFFICIENT * Math.pow(zFactor, 2) * screeningFactor * (flux / 1000) * E_beam) / Math.pow(wavelengthNmToEnergyEv(lambda), 1.15);
+      bremsYield = (BREMSSTRAHLUNG_COEFFICIENT * Math.pow(zFactor, 2) * screeningFactor * (params.intensityFlux / 1000) * E_beam) / Math.pow(wavelengthNmToEnergyEv(lambda), 1.15);
       bremsYield = bremsYield * binWidth * 1e-3;
     }
 
-    // 4. Dopant Induced Fluorescent Scintillation / Wavelength Shifter Peaks
+    // 4. Dopant induced fluorescent scintillation / wavelength shifter peaks
+    // heuristic model, not a first-principles calculation
     let fluorYield = 0;
     if (params.componentsActive.fluorescence) {
       // Quantum nano-dopant or crystal fluorescence centers
       const peakNm = params.nanoparticlesActive ? params.nanoparticlePeakNm : (materialPreset.id === 'lyso' ? 420 : 510);
-      const intensityParam = params.nanoparticlesActive ? params.nanoparticleConcentrationPpm * 0.035 * (flux / 1e4) : 0.0;
-      const crystalLuminescence = (materialPreset.id === 'lyso' ? 1.25 * (flux / 1e3) : 0.0);
-      
+      const intensityParam = params.nanoparticlesActive ? params.nanoparticleConcentrationPpm * 0.035 * (params.intensityFlux / 1e4) : 0.0;
+      const crystalLuminescence = (materialPreset.id === 'lyso' ? 1.25 * (params.intensityFlux / 1e3) : 0.0);
+
       const fwhmWidth = params.nanoparticlesActive ? 25.0 : 40.0;
       const exponent = Math.pow((lambda - peakNm) / fwhmWidth, 2);
       fluorYield = (intensityParam + crystalLuminescence) * Math.exp(-exponent);
     }
 
-    // NEW ADDITIONAL THEORIZED EXTRA RADIATION CHANNELS
-    // A. Quantum Optical Rayleigh Scattering Loss Channel (Losses scale in 1/lambda^4)
+    // Optical Rayleigh scattering loss channel (losses scale in 1/lambda^4)
     let rayleighLossFactor = 1.0;
     if (params.componentsActive.opticalRayleighScattering) {
       const scatteringMeanFreePathMm = RAYLEIGH_MEAN_FREE_PATH_BASE * Math.pow(lambda / RAYLEIGH_SCATTERING_BASE_NM, 4.0); // strong UV/blue scattering loss
       rayleighLossFactor = Math.exp(-depthMm / scatteringMeanFreePathMm);
     }
 
-    // B. Compton Recoil Scattering secondary electron tracker radiation contribution
+    // 5. Compton recoil secondary electron contribution
+    // heuristic model, not a first-principles calculation
     let comptonContribution = 0;
     if (params.componentsActive.comptonScattering) {
       // Enhanced Compton scattering model with Klein-Nishina cross-section approximation
-      const gammaFlux = flux * 0.03; // Compton recoil secondary source factor
+      const gammaFlux = params.intensityFlux * 0.03; // Compton recoil secondary source factor
       const photonEnergyEv = wavelengthNmToEnergyEv(lambda);
       const electronRestMassEv = ELECTRON_MASS_MEV * 1e6; // Convert MeV to eV
       const alpha = photonEnergyEv / electronRestMassEv;
@@ -291,7 +398,7 @@ export function runCherenkovSimulation(
       comptonContribution = (0.015 * gammaFlux * (E_beam / 100.0) * kleinNishina) / Math.sqrt(lambda);
     }
 
-    // C. Photoelectric Ultraviolet Ionization Absorption (Sharp cutoff below 410 nm)
+    // Photoelectric UV ionization absorption (sharp cutoff below 410 nm)
     let photoelectricTransmissionFactor = 1.0;
     if (params.componentsActive.photoelectricIonization) {
       if (lambda < PHOTOELECTRIC_CUTOFF_NM) {
@@ -299,11 +406,12 @@ export function runCherenkovSimulation(
       }
     }
 
-    // D. Relativistic Transition Radiation Peak (X-ray/UV transition interface radiation)
+    // 6. Transition radiation peak (X-ray/UV interface radiation)
+    // heuristic model, not a first-principles calculation
     let transitionRadiationYield = 0;
     if (params.componentsActive.transitionRadiation && gamma > TRANSITION_RADIATION_THRESHOLD_GAMMA) {
       // Emitted when relativistic particle crosses boundary of materials with different dielectric indexes
-      const trStrength = (FINE_STRUCTURE_CONSTANT * Math.log(gamma) * (flux / 1e4));
+      const trStrength = (FINE_STRUCTURE_CONSTANT * Math.log(gamma) * (params.intensityFlux / 1e4));
       // Highly blue/UV skewed
       transitionRadiationYield = trStrength * Math.exp(-(lambda - TRANSITION_RADIATION_PEAK_NM) / 15) * (lambda < 380 ? 1 : 0.1);
     }
@@ -314,36 +422,32 @@ export function runCherenkovSimulation(
     const realFluor = params.componentsActive.fluorescence ? fluorYield : 0;
     const realCompton = params.componentsActive.comptonScattering ? comptonContribution : 0;
     const realTransition = params.componentsActive.transitionRadiation ? transitionRadiationYield : 0;
-    
+
     // Base physical detector grid background
     const realBg = params.componentsActive.detectorBackground ? 0.015 * Math.sin(lambda / 120) + 0.02 : 0;
 
     const rawTotal = (realPrimary + realSecondary + realBrems + realFluor + realCompton + realTransition);
 
-    // 5. High-Precision Optical Transport Layer through Target Thickness
-    // T = exp(-mu_eff * thickness)
+    // Optical transport: path-averaged transmission over the emission length, times scattering/photoelectric factors
     const coeff = getMediumCoefficients(lambda, materialPreset.id);
-    const mu_eff = calculateEffectiveAttenuation(coeff.mu_a, coeff.mu_s, g);
-    
-    // Transmission accounts for both bulk absorption and active photoelectric/Rayleigh variables
-    let transmission = Math.exp(-mu_eff * depthMm) * rayleighLossFactor * photoelectricTransmissionFactor;
+    const mu_eff = calculateEffectiveAttenuation(coeff.mu_a, coeff.mu_s, g); // mm^-1
+    let transmission = pathAveragedTransmission(mu_eff, emissionLengthMm, depthMm) * rayleighLossFactor * photoelectricTransmissionFactor;
     transmission = Math.max(0.0001, Math.min(1.0, transmission));
-    
-    // Total physical photons reaching sensors
-    const opticalTransmittedTotal = (rawTotal * transmission) + realBg;
+
+    // Photons per particle reaching the detector, after detector coupling
+    const opticalTransmittedTotal = ((rawTotal * transmission) + realBg) * detectionFactor;
 
     if (opticalTransmittedTotal > maxWavelengthYield) {
       maxWavelengthYield = opticalTransmittedTotal;
       maxWavelength = lambda;
     }
 
-    totalPhotonsEmitted += rawTotal;
-    totalPhotonsDetected += opticalTransmittedTotal;
+    perParticleEmitted += rawTotal;
+    perParticleDetected += opticalTransmittedTotal;
+    perParticlePhotons += realPrimary + realSecondary;
 
-    let angleDeg = 0;
     if (betaN > 1) {
-      angleDeg = Math.acos(1 / betaN) * (180.0 / Math.PI);
-      sumAngles += angleDeg;
+      sumAngles += cherenkovAngleDeg(beta, n);
       countAngles++;
     }
 
@@ -361,10 +465,22 @@ export function runCherenkovSimulation(
 
   const avgCherenkovAngle = listMeanFromAngleCount(sumAngles, countAngles);
 
-  // Compute final detector calibration details and recommended physical settings
-  const minN = 1.333; // light threshold
+  // Per-run totals
+  const totalPhotonsEmitted = perParticleEmitted * firedParticles;
+  const totalPhotonsDetected = perParticleDetected * firedParticles;
+
+  // Threshold uses the material index at the reference wavelength and chamber temperature
+  const minN = getRefractiveIndexAt(THRESHOLD_REFERENCE_WAVELENGTH_NM, materialPreset, chamberTemp);
   const cherenkovThreshEnergy = getCherenkovThresholdEnergy(massMeV, minN);
-  const snr = calculateModelSNR(totalPhotonsDetected);
+
+  // Signal-to-noise: S / sqrt(S + B), with dark counts per frame scaled to the run
+  let darkCountsPerRun = 0;
+  if (detector) {
+    const darkRate = Math.max(0, detector.darkCountRateHz || 0);
+    const frameRate = Math.max(1, detector.frameRateHz || 0);
+    darkCountsPerRun = (darkRate / frameRate) * firedParticles;
+  }
+  const snrDb = signalToNoiseDb(totalPhotonsDetected, darkCountsPerRun);
 
   // Fluence computation: photons / mm^2
   const spotAreaMm2 = Math.PI * Math.pow((params.beamFwhmUm || 200.0) / 2000.0, 2);
@@ -392,12 +508,11 @@ export function runCherenkovSimulation(
     safetyClass = "Radio-Safe / Research Minimal Influx";
   }
 
-  // Highly robust quantum collisions solver
+  // Collision solver
   // N_collisions = N_fired * (1 - e ^ (-trackLength / lambda_mean_free_path))
   // Mean free path decreases at higher mass and scales down at extreme energies
   const alphaMfp = COLLISION_MFP_BASE / (1.0 + Math.pow(E_beam / 1000.0, 0.22));
-  const collisionProbability = 1.0 - Math.exp(-params.trackLengthMm / alphaMfp);
-  const firedParticles = params.numberFiredParticles || 100;
+  const collisionProbability = 1.0 - Math.exp(-trackMm / alphaMfp);
   const totalCollisions = Math.max(0, Math.round(firedParticles * collisionProbability));
 
   // Radiation heat energy losses estimate (in MeV)
@@ -409,19 +524,19 @@ export function runCherenkovSimulation(
     spectra: points,
     summary: {
       beta,
-      betaThreshold: 1.0 / (getRefractiveIndexAt(500, materialPreset, chamberTemp)),
+      betaThreshold: 1.0 / minN,
       isCherenkovGenerated: generatesCherenkov,
       cherenkovAngleDeg: Number(avgCherenkovAngle.toFixed(2)),
       totalPhotonsEmitted: Number(totalPhotonsEmitted.toFixed(1)),
       totalPhotonsDetected: Number(totalPhotonsDetected.toFixed(1)),
+      photonsPerParticle: Number(perParticlePhotons.toFixed(3)),
       peakWavelengthNm: maxWavelength,
-      signalToNoiseRatioDb: Number(snr.toFixed(1)),
-      optimalDetectorConfig: getDetectorConfigRecommendation(params, materialPreset),
+      signalToNoiseRatioDb: snrDb,
       cherenkovThresholdEnergyMeV: Number(cherenkovThreshEnergy.toFixed(3)),
       fluencePhotonsPerMm2: Number(fluence.toFixed(2)),
       experimentalFluencePercentError: FluenceError,
       radSafetyClassification: safetyClass,
-      
+
       // Dynamic extended properties returned to render
       isThermalAnomaly,
       thermalDeviationPct: Number(thermalDeviationPct.toFixed(2)),
@@ -454,68 +569,12 @@ export function getCherenkovThresholdEnergy(massMeV: number, refractiveIndex: nu
   return massMeV * (gamma_thr - 1.0);
 }
 
-function calculateModelSNR(photonsDetected: number): number {
-  if (photonsDetected <= 0) return 0;
-  const signalToNoise = photonsDetected / (BASE_NOISE_RMS + Math.sqrt(photonsDetected));
-  return 10.0 * Math.log10(Math.max(MIN_SNR_DB, signalToNoise));
-}
-
-function getDetectorConfigRecommendation(params: SimulationParams, preset: MaterialPreset): string {
-  if (preset.id === "heavy_water") {
-    return "PMT Multi-Anode Array (Ultra-low dark count rate < 20 Hz, 32% quantum efficiency)";
-  }
-  if (preset.id === "lead_glass" || preset.id === "plastic_scintillator") {
-    return "Timepix3 Silicon Pixel Hybrid Tracker (1.2 keV dual-energy thresholds, Charge-Summing Mode)";
-  }
-  return "Medipix3 CCD array with Fused Silica entrance window (GaAs sensor thickness 110 µm)";
-}
-
 /**
- * High-precision predictive detector performance analyzer.
+ * SNR = S / sqrt(S + B) in dB, where S is detected signal photons per run and B is dark counts per run.
+ * Returns 0 dB when there is no signal. SNR is floored at 1e-6 before the log.
  */
-export function predictDetectorPerformance(
-  energyMeV: number,
-  nStatic: number,
-  depthMm: number,
-  concentrationPpm: number
-): { snr: number; accuracy: number; detectionEfficiency: number } {
-  const intercept = 4.8;
-  const coeffEnergy = 1.62;
-  const coeffN = 14.2;
-  const coeffDepth = -0.38; // attenuation loss coefficients
-  const coeffNanoparticle = 0.095;
-
-  let snr = intercept +
-    (energyMeV * coeffEnergy) +
-    ((nStatic - 1.0) * coeffN) +
-    (depthMm * coeffDepth) +
-    (concentrationPpm * coeffNanoparticle);
-
-  snr = Math.max(1.5, Math.min(64.2, snr));
-  const efficiency = Math.max(15, Math.min(99.8, 92.5 * (1 - Math.exp(-energyMeV / 15)) - (depthMm * 1.2)));
-  const accuracy = Math.max(89.5, Math.min(99.99, 96.8 + (snr * 0.05) - (depthMm * 0.03)));
-
-  return {
-    snr,
-    accuracy,
-    detectionEfficiency: efficiency,
-  };
-}
-
-/**
- * High-performance Sobol sensitivity index models.
- */
-export function calculateSobolSensitivities(params: SimulationParams): { parameter: string; index: number }[] {
-  const depthWeight = params.radiatorThicknessMm > 8.0 ? 0.42 : 0.22;
-  const energyWeight = params.beamEnergyMeV > 10.0 ? 0.18 : 0.38;
-  const materialWeight = 0.32;
-  const nanoparticlesWeight = params.nanoparticlesActive ? 0.14 : 0.04;
-
-  return [
-    { parameter: "Target Material Thickness (x)", index: depthWeight },
-    { parameter: "Incident Beam Kinetic Energy", index: energyWeight },
-    { parameter: "Medium Dispersion Index n(λ)", index: materialWeight },
-    { parameter: "Isotopic Flux Intensity", index: 0.12 },
-    { parameter: "Spectroscopic Dopants / QD Peak", index: nanoparticlesWeight },
-  ].sort((a, b) => b.index - a.index);
+function signalToNoiseDb(signalPhotons: number, darkCounts: number): number {
+  if (!(signalPhotons > 0)) return 0;
+  const snr = Math.max(1e-6, signalPhotons / Math.sqrt(signalPhotons + Math.max(0, darkCounts)));
+  return Number((10.0 * Math.log10(snr)).toFixed(1));
 }

@@ -3,11 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from "react";
-import { predictDetectorPerformance, calculateSobolSensitivities } from "../core/physics";
+import React from "react";
 import { SimulationParams, DetectorSettings } from "../types";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { TrendingUp, Sliders, Cpu, FileJson, FileText, Download, CheckCircle, Info } from "lucide-react";
+import { Sliders, FileJson, FileText, Download, CheckCircle } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 
@@ -19,33 +17,6 @@ interface ExportsTabProps {
 }
 
 export default function ExportsTab({ params, detector, onGenerateReport, isDarkMode }: ExportsTabProps) {
-  // Analytical performance predictor local testing state
-  const [testEnergy, setTestEnergy] = useState(params.beamEnergyMeV);
-  const [testIndex, setTestIndex] = useState(1.45);
-  const [testDepth, setTestDepth] = useState(params.radiatorThicknessMm);
-  const [testNano, setTestNano] = useState(params.nanoparticleConcentrationPpm);
-
-  const syncWithSim = () => {
-    setTestEnergy(params.beamEnergyMeV);
-    setTestIndex(1.458); // fused silica quartz reference
-    setTestDepth(params.radiatorThicknessMm);
-    setTestNano(params.nanoparticlesActive ? params.nanoparticleConcentrationPpm : 0.0);
-  };
-
-  // Predict outputs
-  const predictions = useMemo(() => {
-    return predictDetectorPerformance(testEnergy, testIndex, testDepth, testNano);
-  }, [testEnergy, testIndex, testDepth, testNano]);
-
-  // Sobol factor sensitivities
-  const sensitivities = useMemo(() => {
-    const raw = calculateSobolSensitivities(params);
-    return raw.map((item) => ({
-      name: item.parameter,
-      SobolIndex: Number(item.index.toFixed(3)),
-    }));
-  }, [params]);
-
   // 4x4 Spearman Correlation Heatmap variables matrix
   const correlationMatrix = [
     { row: "Kinetic Energy", Speed: 1.0, Dispersion: 0.0, Depth: 0.0, Yield: 0.72, SNR: 0.64 },
@@ -169,149 +140,11 @@ export default function ExportsTab({ params, detector, onGenerateReport, isDarkM
           </div>
       </div>
 
-      {/* Performance predictor panel & sensitivity tornado */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* ML Performance Predictor */}
-        <div className={`border rounded-xl p-6 shadow-lg flex flex-col justify-between ${cardBg}`}>
-          <div>
-            <div className="flex items-center space-x-2 border-b border-slate-100/10 pb-3 mb-4">
-              <Cpu className="text-orange-500 w-5 h-5" />
-              <h3 className={`text-xs font-extrabold uppercase tracking-wider ${textTitle}`}>
-                HEP Spectrometry Matcher & Target Predictor
-              </h3>
-            </div>
-            <p className="text-xs opacity-70 mb-4 font-sans leading-relaxed">
-              Configure experimental spectrometer metrics in real-time to predict target <strong className="text-orange-500">Signal-to-Noise Ratio (dB)</strong>, particle track classification accuracy, and single-electron detection efficiency (trained on electromagnetic calorimeter calibrator clusters).
-            </p>
-
-            {/* Slide controllers */}
-            <div className="space-y-3.5 font-mono text-xs mb-5">
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span className={textLabel}>Incident Energy (E):</span>
-                  <span className="text-orange-500 font-bold">{testEnergy.toFixed(2)} MeV</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.1"
-                  max="500.0"
-                  step="1.0"
-                  value={testEnergy}
-                  onChange={(e) => setTestEnergy(parseFloat(e.target.value))}
-                  className="w-full accent-orange-500 h-1 bg-slate-250 dark:bg-slate-800 rounded cursor-pointer border-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span className={textLabel}>Refractive Index (n):</span>
-                  <span className="text-orange-500 font-bold">{testIndex.toFixed(3)}</span>
-                </div>
-                <input
-                  type="range"
-                  min="1.01"
-                  max="3.0"
-                  step="0.01"
-                  value={testIndex}
-                  onChange={(e) => setTestIndex(parseFloat(e.target.value))}
-                  className="w-full accent-orange-500 h-1 bg-slate-250 dark:bg-slate-800 rounded cursor-pointer border-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span className={textLabel}>Radiator Thickness (x):</span>
-                  <span className="text-orange-500 font-bold">{testDepth.toFixed(1)} mm</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.0"
-                  max="150.0"
-                  step="1.0"
-                  value={testDepth}
-                  onChange={(e) => setTestDepth(parseFloat(e.target.value))}
-                  className="w-full accent-orange-500 h-1 bg-slate-250 dark:bg-slate-800 rounded cursor-pointer border-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span className={textLabel}>QD Wavelength Shifter Dopants:</span>
-                  <span className="text-orange-500 font-bold">{testNano} ppm</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="1000"
-                  step="10"
-                  value={testNano}
-                  onChange={(e) => setTestNano(parseInt(e.target.value) || 0)}
-                  className="w-full accent-orange-500 h-1 bg-slate-250 dark:bg-slate-800 rounded cursor-pointer border-none"
-                />
-              </div>
-            </div>
-
-            {/* Results Grid layout */}
-            <div className={`grid grid-cols-3 gap-3 border p-3.5 rounded-lg text-center mb-4 ${metricsBg}`}>
-              <div>
-                <span className="block text-[9px] text-slate-500 uppercase tracking-widest font-sans font-bold">Predicted SNR</span>
-                <span className="text-base font-extrabold text-orange-500">{predictions.snr.toFixed(1)} dB</span>
-              </div>
-              <div className="border-l border-slate-100/10">
-                <span className="block text-[9px] text-slate-500 uppercase tracking-widest font-sans font-bold">Track Accuracy</span>
-                <span className="text-base font-extrabold text-emerald-400">{predictions.accuracy.toFixed(2)}%</span>
-              </div>
-              <div className="border-l border-slate-100/10">
-                <span className="block text-[9px] text-slate-500 uppercase tracking-widest font-sans font-bold">Detection Eff</span>
-                <span className="text-base font-extrabold text-[#9333ea]">{predictions.detectionEfficiency.toFixed(1)}%</span>
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={syncWithSim}
-            className={`w-full py-2 border text-xs font-bold rounded-lg transition ${btnSec}`}
-          >
-            Pull Variables from Live Configuration
-          </button>
-        </div>
-
-        {/* Global parameter sensitivity (Sobol Tornado) */}
-        <div className={`border rounded-xl p-6 shadow-lg flex flex-col justify-between ${cardBg}`}>
-          <div>
-            <div className="flex items-center space-x-2 border-b border-slate-100/10 pb-3 mb-4">
-              <TrendingUp className="text-orange-500 w-5 h-5" />
-              <h3 className={`text-xs font-extrabold uppercase tracking-wider ${textTitle}`}>
-                Sensitivity Metrics (Sobol First-Order Index)
-              </h3>
-            </div>
-            <p className="text-xs opacity-70 mb-3 font-sans leading-relaxed">
-              Variance-based sensitivity indices depicting the relative contribution contribution of each physical constraint key to final spectrometry performance levels.
-            </p>
-
-            <div className="w-full h-44">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={sensitivities} layout="vertical" margin={{ top: 5, right: 10, left: 35, bottom: 5 }}>
-                  <CartesianGrid stroke={isDarkMode ? "#1e293b" : "#f1f5f9"} strokeDasharray="3 3"/>
-                  <XAxis type="number" stroke="#64748b" fontSize={10} domain={[0, 1]} />
-                  <YAxis type="category" dataKey="name" stroke="#64748b" fontSize={9} width={90} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: isDarkMode ? "#090d16" : "#ffffff", border: `1px solid ${isDarkMode ? "#1e293b" : "#e2e8f0"}`, borderRadius: "8px", color: isDarkMode ? "#f1f5f9" : "#334155" }}
-                    itemStyle={{ fontSize: 11 }}
-                  />
-                  <Bar dataKey="SobolIndex" name="Sobol Index" fill="#f97316" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-          <div className={`p-3 border rounded-lg text-[10px] flex items-start space-x-2 font-sans mt-2 ${metricsBg}`}>
-            <Info className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
-            <p className="leading-relaxed opacity-75">
-              Tensors highlight that <strong className="font-extrabold">Radiator Target Thickness</strong> dominates physical attenuation constraints, whereas radiator dispersing refractive index dispersion <strong className="font-extrabold">n(λ)</strong> controls high-energy Cherenkov threshold yields.
-            </p>
-          </div>
-        </div>
+      {/* Sensitivity and ML predictor notes */}
+      <div className={`border rounded-xl p-4 shadow-lg text-xs font-sans ${cardBg}`}>
+        <p className="leading-relaxed opacity-75">
+          Sensitivity analysis and ML predictors were removed because they were not computed from the physics model.
+        </p>
       </div>
 
       {/* Spearman correlations heatmap */}
