@@ -28,7 +28,7 @@ const TermsOfService: React.FC = () => {
 
             <h2 className="text-xl font-semibold text-white mt-8 mb-4">1. Educational and Research Use</h2>
             <p>
-              Celeritas is designed as an educational and research-oriented physics simulation tool. The data, visualizations, and metrics provided by this application are estimations based on theoretical models and should not be used for mission-critical engineering, medical dosimetry, or safety-critical applications without independent verification.
+              Celeritas is designed as an educational and research-oriented physics simulation tool. The data, visualizations, and metrics provided by this application are estimations based on theoretical models and should not be used for mission-critical engineering, clinical, dosimetric, or radiation-safety decisions without independent verification. Celeritas is a research and teaching simulator and is not a medical or radiation-safety tool.
             </p>
 
             <h2 className="text-xl font-semibold text-white mt-8 mb-4">2. Intellectual Property</h2>

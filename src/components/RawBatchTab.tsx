@@ -62,7 +62,7 @@ export default function RawBatchTab({ batchRows, setBatchRows, isDarkMode }: Raw
       { id: "5", sampleName: "Silica Aerogel Block [SPS Proton]", beta: 0.7420, refractiveIndex: 1.050, energyMeV: 450.0, radiatorThicknessMm: 10.0 },
       { id: "6", sampleName: "BGO Scintillator Crystal [PET Gamma]", beta: 0.9120, refractiveIndex: 2.150, energyMeV: 0.511, radiatorThicknessMm: 30.0 },
       { id: "7", sampleName: "Liquid Xenon (LXe) [Dark Matter WIMP]", beta: 0.6500, refractiveIndex: 1.690, energyMeV: 0.050, radiatorThicknessMm: 200.0 },
-      { id: "8", sampleName: "Sapphire Window (Al2O3) [Medical Linac]", beta: 0.9850, refractiveIndex: 1.770, energyMeV: 15.0, radiatorThicknessMm: 5.0 },
+      { id: "8", sampleName: "Sapphire Window (Al2O3) [Linac beam reference]", beta: 0.9850, refractiveIndex: 1.770, energyMeV: 15.0, radiatorThicknessMm: 5.0 },
       { id: "9", sampleName: "Polystyrene Plastic (EJ-212) [Fast Neutron]", beta: 0.8500, refractiveIndex: 1.580, energyMeV: 2.0, radiatorThicknessMm: 50.0 },
       { id: "10", sampleName: "Water (H2O) [Super-Kamiokande Neutrino]", beta: 0.9990, refractiveIndex: 1.333, energyMeV: 1000.0, radiatorThicknessMm: 1000.0 },
     ];
@@ -265,7 +265,7 @@ export default function RawBatchTab({ batchRows, setBatchRows, isDarkMode }: Raw
           <div className="flex items-center space-x-2">
             <Table className="text-orange-500 w-5 h-5" />
             <h3 className="text-xs font-extrabold uppercase tracking-wider">
-              Interactive Experimental Calibration Calculator
+              Interactive Calibration Calculator
             </h3>
           </div>
           <div className="flex items-center space-x-2.5">

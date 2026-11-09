@@ -29,6 +29,14 @@ interface DynamicPlotsProps {
   isDarkMode: boolean;
 }
 
+// Neutral display labels for physics-generated fluence classes (display only).
+const neutralFluenceClass = (s: string) => s
+  .replace("Extremely Lethal Beam Zone (High Fluence)", "High-fluence zone")
+  .replace("High Radiation Field (Biohazard Control Required)", "High-fluence field (shielding review recommended)")
+  .replace("Controlled Active Beamline Area (Occupational Watch)", "Active beamline area (monitoring recommended)")
+  .replace("Radio-Safe / Research Minimal Influx", "Low-fluence reference")
+  .replace("Minimal Exposure / Research Grade", "Minimal fluence (reference)");
+
 export default React.memo(function DynamicPlots({ spectra, summary, detector, beamEnergyMeV, isDarkMode }: DynamicPlotsProps) {
   
   // Custom tooltip styling
@@ -566,9 +574,9 @@ export default React.memo(function DynamicPlots({ spectra, summary, detector, be
             </span>
           </div>
           <div className={`flex flex-col justify-center items-center border-t sm:border-t-0 sm:border-l ${footerBorder}`}>
-            <span className="text-[9px] opacity-60 uppercase tracking-widest font-bold mb-1">Radiotherapy Safe-status</span>
+            <span className="text-[9px] opacity-60 uppercase tracking-widest font-bold mb-1">Shielding Reference Status</span>
             <span className="text-sm font-bold text-amber-500 dark:text-amber-400">
-              {summary.radSafetyClassification || "Unshielded Zone"}
+              {neutralFluenceClass(summary.radSafetyClassification || "Unshielded Zone")}
             </span>
           </div>
           <div className={`flex flex-col justify-center items-center border-t sm:border-t-0 sm:border-l ${footerBorder}`}>

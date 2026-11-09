@@ -280,7 +280,7 @@ export default function ValidationTab({ params, setParams, summary, isDarkMode }
     },
     {
       name: "Cherenkov angle, water (beta = 1, n = 1.333)",
-      reference: 41.2,
+      reference: 41.39,
       computed: cherenkovAngleDeg(1, 1.333),
       tolerance: 0.1,
       unit: "deg",
@@ -288,7 +288,7 @@ export default function ValidationTab({ params, setParams, summary, isDarkMode }
     },
     {
       name: "Frank-Tamm photons per particle, electron (beta = 0.8754, n = 1.328, 300-800 nm, 10 mm)",
-      reference: 266,
+      reference: 248.4,
       computed: frankTammPhotonsPerMm(0.8754, 1.328, 300, 800) * 10,
       tolerance: 10,
       unit: "photons",

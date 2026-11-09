@@ -359,7 +359,7 @@ export function runCherenkovSimulation(
       const zFactor = (params.isotopeId === "custom" ? zVal : (isotopePreset?.type === "heavy-ion" ? 3.0 : 1.0));
       // Enhanced Bremsstrahlung model with Z^2 dependence and energy scaling
       const screeningFactor = Math.log(183 * Math.pow(zFactor, -1/3));
-      bremsYield = (BREMSSTRAHLUNG_COEFFICIENT * Math.pow(zFactor, 2) * screeningFactor * (params.intensityFlux / 1000) * E_beam) / Math.pow(wavelengthNmToEnergyEv(lambda), 1.15);
+      bremsYield = (BREMSSTRAHLUNG_COEFFICIENT * Math.pow(zFactor, 2) * screeningFactor * (1 / 1000) * E_beam) / Math.pow(wavelengthNmToEnergyEv(lambda), 1.15);
       bremsYield = bremsYield * binWidth * 1e-3;
     }
 
@@ -369,8 +369,8 @@ export function runCherenkovSimulation(
     if (params.componentsActive.fluorescence) {
       // Quantum nano-dopant or crystal fluorescence centers
       const peakNm = params.nanoparticlesActive ? params.nanoparticlePeakNm : (materialPreset.id === 'lyso' ? 420 : 510);
-      const intensityParam = params.nanoparticlesActive ? params.nanoparticleConcentrationPpm * 0.035 * (params.intensityFlux / 1e4) : 0.0;
-      const crystalLuminescence = (materialPreset.id === 'lyso' ? 1.25 * (params.intensityFlux / 1e3) : 0.0);
+      const intensityParam = params.nanoparticlesActive ? params.nanoparticleConcentrationPpm * 0.035 * (1 / 1e4) : 0.0;
+      const crystalLuminescence = (materialPreset.id === 'lyso' ? 1.25 * (1 / 1e3) : 0.0);
 
       const fwhmWidth = params.nanoparticlesActive ? 25.0 : 40.0;
       const exponent = Math.pow((lambda - peakNm) / fwhmWidth, 2);
@@ -389,7 +389,7 @@ export function runCherenkovSimulation(
     let comptonContribution = 0;
     if (params.componentsActive.comptonScattering) {
       // Enhanced Compton scattering model with Klein-Nishina cross-section approximation
-      const gammaFlux = params.intensityFlux * 0.03; // Compton recoil secondary source factor
+      const gammaFlux = 1 * 0.03; // Compton recoil secondary source factor
       const photonEnergyEv = wavelengthNmToEnergyEv(lambda);
       const electronRestMassEv = ELECTRON_MASS_MEV * 1e6; // Convert MeV to eV
       const alpha = photonEnergyEv / electronRestMassEv;
@@ -411,7 +411,7 @@ export function runCherenkovSimulation(
     let transitionRadiationYield = 0;
     if (params.componentsActive.transitionRadiation && gamma > TRANSITION_RADIATION_THRESHOLD_GAMMA) {
       // Emitted when relativistic particle crosses boundary of materials with different dielectric indexes
-      const trStrength = (FINE_STRUCTURE_CONSTANT * Math.log(gamma) * (params.intensityFlux / 1e4));
+      const trStrength = (FINE_STRUCTURE_CONSTANT * Math.log(gamma) * (1 / 1e4));
       // Highly blue/UV skewed
       transitionRadiationYield = trStrength * Math.exp(-(lambda - TRANSITION_RADIATION_PEAK_NM) / 15) * (lambda < 380 ? 1 : 0.1);
     }

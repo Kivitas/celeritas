@@ -106,14 +106,15 @@ export const generateScientificReportPdf = (summary: any, params: any, detector:
 
     // PAGE 1: Title and Abstract
     addText("ULTRA COOL PHYSICS SIMULATOR", 24, true, [15, 23, 42]);
-    addText("COMPREHENSIVE THEORETICAL ANALYSIS & EXPERIMENTAL REPORT", 16, true, [100, 100, 100]);
+    addText("COMPREHENSIVE THEORETICAL ANALYSIS & SIMULATION REPORT", 16, true, [100, 100, 100]);
+    addText("Research and teaching simulator. Results are not for clinical, dosimetric, or radiation-safety decisions.", 10, false, [100, 100, 100]);
     y += 10;
     addText(`Date Generated: ${new Date().toLocaleString()}`, 11, false, [120, 120, 120]);
     addText(`Experiment Profile ID: EXP-${Math.random().toString(36).substring(2, 10).toUpperCase()}`, 11, false, [120, 120, 120]);
     y += 10;
 
     addHeader("ABSTRACT");
-    addText(`This report details the simulated outcomes of a high-energy particle physics experiment conducted via the Ultra Cool Physics Simulator framework. The primary objective is to evaluate the interaction of a ${params?.beamEnergyMeV || 0} ${params?.energyUnit || 'MeV'} particle beam through a predefined radiator medium of ${params?.radiatorThicknessMm || 0} mm thickness. By leveraging Monte Carlo approximation techniques and analytical derivations of the Bethe-Bloch and Frank-Tamm equations, we analyze the resulting Cherenkov radiation yield, delta-ray production, stopping power, and secondary electromagnetic cascades. The simulated detector array, utilizing ${detector?.chipset || 'standard'} architecture, captures these interactions to yield high-fidelity dosimetric and spectrometric data. This document provides a fully exhaustive breakdown of the kinematics, theoretical cross-sections, and all explicit simulator configurations set by the operator.`, 11, false, [40, 40, 40]);
+    addText(`This report details the simulated outcomes of a high-energy particle physics experiment conducted via the Ultra Cool Physics Simulator framework. The primary objective is to evaluate the interaction of a ${params?.beamEnergyMeV || 0} ${params?.energyUnit || 'MeV'} particle beam through a predefined radiator medium of ${params?.radiatorThicknessMm || 0} mm thickness. By leveraging Monte Carlo approximation techniques and analytical derivations of the Bethe-Bloch and Frank-Tamm equations, we analyze the resulting Cherenkov radiation yield, delta-ray production, stopping power, and secondary electromagnetic cascades. The simulated detector array, utilizing ${detector?.chipset || 'standard'} architecture, captures these interactions to yield high-fidelity energy-deposition and spectrometric data. This document provides a fully exhaustive breakdown of the kinematics, theoretical cross-sections, and all explicit simulator configurations set by the operator.`, 11, false, [40, 40, 40]);
     y += 5;
 
     // PAGE 2: Kinematics & Relativity
@@ -156,16 +157,21 @@ export const generateScientificReportPdf = (summary: any, params: any, detector:
     addText(`* Mean Cherenkov Emission Angle (theta_c = arccos(1/n*beta)): ${(Number(summary?.cherenkovAngleRad || 0) * 180 / Math.PI).toFixed(4)} deg`, 11, false, [0,0,0], 5);
     addText(`* Estimated Integrated Photon Yield (N): ${Math.floor(Number(summary?.numberPhotonsEmitted || 0)).toLocaleString()} photons`, 11, false, [0,0,0], 5);
     
-    addHeader("4. ENERGY LOSS MECHANISMS & DOSIMETRY");
+    addHeader("4. ENERGY LOSS MECHANISMS & DEPOSITED ENERGY");
     addText("As the particle traverses the medium, it undergoes continuous energy loss primarily through inelastic collisions with atomic electrons (ionization and excitation) and bremsstrahlung.", 11);
     y += 5;
     const dEdx = Number(summary?.stoppingPower || 0);
     addText(`* Total Stopping Power (dE/dx via Bethe-Bloch): ${dEdx > 0 ? dEdx.toExponential(4) : '0'} MeV/cm`, 11, true);
     addText("This value incorporates density effect corrections at extreme relativistic limits (Fermi plateau) and shell corrections at lower energies.", 11, false, [50, 50, 50], 5);
     y += 5;
-    addText("Radiation safety protocols require strict monitoring of the total energy deposited in the detector substrate and surrounding shielding.", 11);
-    const radClass = String(summary?.radSafetyClassification || "Safe");
-    addText(`* Radiological Classification: ${radClass}`, 12, true, radClass.includes("WARNING") ? [220, 38, 38] : [22, 163, 74]);
+    addText("For research reference, the total energy deposited in the detector substrate and surrounding shielding is tracked for each simulated configuration.", 11);
+    const radClass = String(summary?.radSafetyClassification || "Reference")
+      .replace("Extremely Lethal Beam Zone (High Fluence)", "High-fluence zone")
+      .replace("High Radiation Field (Biohazard Control Required)", "High-fluence field (shielding review recommended)")
+      .replace("Controlled Active Beamline Area (Occupational Watch)", "Active beamline area (monitoring recommended)")
+      .replace("Radio-Safe / Research Minimal Influx", "Low-fluence reference")
+      .replace("Minimal Exposure / Research Grade", "Minimal fluence (reference)");
+    addText(`* Fluence Reference Class: ${radClass}`, 12, true, radClass.includes("WARNING") ? [220, 38, 38] : [22, 163, 74]);
     addText(`* Estimated Target Fluence: ${Number(summary?.fluencePhotonsPerMm2 || 0).toLocaleString()} photons/mm^2`, 11, false, [0,0,0], 5);
 
     addHeader("5. FUNDAMENTAL FORMULAS UTILIZED");

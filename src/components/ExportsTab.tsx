@@ -5,7 +5,7 @@
 
 import React from "react";
 import { SimulationParams, DetectorSettings } from "../types";
-import { Sliders, FileJson, FileText, Download, CheckCircle } from "lucide-react";
+import { FileJson, FileText, Download, CheckCircle } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 
@@ -17,33 +17,6 @@ interface ExportsTabProps {
 }
 
 export default function ExportsTab({ params, detector, onGenerateReport, isDarkMode }: ExportsTabProps) {
-  // 4x4 Spearman Correlation Heatmap variables matrix
-  const correlationMatrix = [
-    { row: "Kinetic Energy", Speed: 1.0, Dispersion: 0.0, Depth: 0.0, Yield: 0.72, SNR: 0.64 },
-    { row: "Refractive Index (n)", Speed: 0.0, Dispersion: 1.0, Depth: 0.0, Yield: 0.81, SNR: 0.78 },
-    { row: "Radiator Thickness (x)", Speed: 0.0, Dispersion: 0.0, Depth: 1.0, Yield: -0.85, SNR: -0.92 },
-    { row: "Spectra Photo Yield", Speed: 0.72, Dispersion: 0.81, Depth: -0.85, Yield: 1.0, SNR: 0.95 },
-  ];
-
-  const getHeatmapBg = (val: number) => {
-    if (val === 1.0) {
-      return isDarkMode ? "bg-orange-950/80 text-orange-200 border-orange-900/60" : "bg-orange-100 text-orange-950 border-orange-300 font-bold";
-    }
-    if (val > 0.7) {
-      return isDarkMode ? "bg-orange-900/40 text-orange-300 border-orange-900/30" : "bg-orange-50 text-orange-900 border-orange-100";
-    }
-    if (val > 0.4) {
-      return isDarkMode ? "bg-slate-800 text-slate-100 border-slate-700" : "bg-slate-100 text-slate-800 border-slate-200";
-    }
-    if (val === 0.0) {
-      return isDarkMode ? "bg-slate-950 text-slate-600 border-slate-900" : "bg-slate-50 text-slate-400 border-slate-100";
-    }
-    if (val < -0.7) {
-      return isDarkMode ? "bg-rose-950/40 text-rose-300 border-rose-900/30" : "bg-rose-50 text-rose-900 border-rose-200";
-    }
-    return isDarkMode ? "bg-slate-900 text-slate-300 border-slate-800" : "bg-slate-50 text-slate-600 border-slate-150";
-  };
-
   // Theme support classes
   const cardBg = isDarkMode ? "bg-slate-900/90 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-850";
   const textTitle = isDarkMode ? "text-slate-100" : "text-slate-800";
@@ -130,8 +103,8 @@ export default function ExportsTab({ params, detector, onGenerateReport, isDarkM
                  <span className="block text-sm font-bold text-orange-500 mt-1">{params.mcEventsPerRun.toLocaleString()} Events</span>
               </div>
               <div className={`p-3 rounded-lg border text-center ${metricsBg}`}>
-                 <span className="block text-[9px] uppercase tracking-wider opacity-60">Avg. Hit Occupancy</span>
-                 <span className="block text-sm font-bold text-slate-300 mt-1">{(Math.random()*45 + 10).toFixed(1)} hits/evt</span>
+                 <span className="block text-[9px] uppercase tracking-wider opacity-60">Particles per Batch</span>
+                 <span className="block text-sm font-bold text-slate-300 mt-1">{params.numberFiredParticles.toLocaleString()} particles</span>
               </div>
               <div className={`p-3 rounded-lg border text-center ${metricsBg}`}>
                  <span className="block text-[9px] uppercase tracking-wider opacity-60">DAQ Buffer</span>
@@ -147,57 +120,14 @@ export default function ExportsTab({ params, detector, onGenerateReport, isDarkM
         </p>
       </div>
 
-      {/* Spearman correlations heatmap */}
+      {/* Correlation analysis removed: the previous matrix was hardcoded, not computed. */}
+      <div className={`border rounded-xl p-4 shadow-lg text-xs font-sans ${cardBg}`}>
+        <p className="leading-relaxed opacity-75">
+          The Spearman correlation matrix was removed because its values were hardcoded rather than computed from the model.
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Heatmap table */}
-        <div className={`lg:col-span-2 border rounded-xl p-6 shadow-lg ${cardBg}`}>
-          <div className="flex items-center space-x-2 border-b border-slate-100/10 pb-3 mb-4">
-            <Sliders className="text-orange-500 w-5 h-5" />
-            <h3 className={`text-xs font-extrabold uppercase tracking-wider ${textTitle}`}>
-              Interactive Scientific Spearman Correlation Matrix
-            </h3>
-          </div>
-          <p className="text-xs opacity-70 mb-4 font-sans leading-relaxed">
-            Displays statistical covariance correlations between independent input controls and optical performance yields. Values close to ±1.0 indicate strong physical coupling limits.
-          </p>
-
-          <div className={`overflow-x-auto border rounded-lg ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}>
-            <table className="w-full text-center text-xs font-mono font-bold border-collapse">
-              <thead>
-                <tr className={`${tableHeadBg} border-b text-[10px]`}>
-                  <th className="p-3 text-left font-sans border-r border-slate-100/10">Physical Variable</th>
-                  <th className="p-3 border-r border-slate-100/10">Kinetic Energy</th>
-                  <th className="p-3 border-r border-slate-100/10">Refractive (n)</th>
-                  <th className="p-3 border-r border-slate-100/10">Thickness (x)</th>
-                  <th className="p-3">Cherenkov Yield</th>
-                </tr>
-              </thead>
-              <tbody>
-                {correlationMatrix.map((row, idx) => (
-                  <tr key={idx} className={`border-b ${isDarkMode ? "border-slate-800" : "border-slate-150"}`}>
-                    <td className={`p-3 font-sans text-left font-bold border-r ${isDarkMode ? "border-slate-800 text-slate-100" : "border-slate-200 text-slate-800"}`}>
-                      {row.row}
-                    </td>
-                    <td className={`p-3 border-r ${isDarkMode ? "border-slate-800" : "border-slate-200"} ${getHeatmapBg(row.Speed)}`}>
-                      {row.Speed.toFixed(2)}
-                    </td>
-                    <td className={`p-3 border-r ${isDarkMode ? "border-slate-800" : "border-slate-200"} ${getHeatmapBg(row.Dispersion)}`}>
-                      {row.Dispersion.toFixed(2)}
-                    </td>
-                    <td className={`p-3 border-r ${isDarkMode ? "border-slate-800" : "border-slate-200"} ${getHeatmapBg(row.Depth)}`}>
-                      {row.Depth.toFixed(2)}
-                    </td>
-                    <td className={`p-3 ${getHeatmapBg(row.Yield)}`}>
-                      {row.Yield.toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
         {/* Academic & Laboratory exports */}
         <div className={`border rounded-xl p-6 shadow-lg flex flex-col justify-between ${cardBg}`}>
           <div>
@@ -208,7 +138,7 @@ export default function ExportsTab({ params, detector, onGenerateReport, isDarkM
               </h3>
             </div>
             <p className="text-xs opacity-70 mb-4 font-sans leading-relaxed">
-              Compile simulated data arrays and Experimental configurations into high-integrity structured distributions. Fully compatible for peer-reviewed journal reviews.
+              Compile simulated data arrays and Experiment configurations into high-integrity structured distributions. Fully compatible for peer-reviewed journal reviews.
             </p>
 
             <div className="space-y-2.5">

@@ -16,6 +16,23 @@ interface LabTabProps {
   isDarkMode: boolean;
 }
 
+// Neutral display labels for physics-generated fluence classes (display only).
+const neutralFluenceClass = (s: string) => s
+  .replace("Extremely Lethal Beam Zone (High Fluence)", "High-fluence zone")
+  .replace("High Radiation Field (Biohazard Control Required)", "High-fluence field (shielding review recommended)")
+  .replace("Controlled Active Beamline Area (Occupational Watch)", "Active beamline area (monitoring recommended)")
+  .replace("Radio-Safe / Research Minimal Influx", "Low-fluence reference")
+  .replace("Minimal Exposure / Research Grade", "Minimal fluence (reference)");
+
+const APPLICATION_LABELS: Record<string, string> = {
+  imrt: "IMRT beam reference",
+  proton_therapy_verify: "Proton range reference",
+  nuclear_dosimetry: "Isotope source reference",
+  ophthalmic_dosimetry: "Alternative application (reference only)",
+  molecular_imaging: "CLI molecular imaging reference",
+  none: "None",
+};
+
 export default function LabTab({ params, detector, summary, isDarkMode }: LabTabProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1250,7 +1267,7 @@ export default function LabTab({ params, detector, summary, isDarkMode }: LabTab
                 className={`py-1.5 px-3 border rounded-lg text-[9px] font-mono font-bold uppercase transition flex items-center space-x-2 cursor-pointer shadow-lg backdrop-blur-md ${isLaserGuideActive ? "bg-green-500/20 border-green-500/50 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.3)]" : "bg-slate-900/60 border-slate-700/50 text-slate-400 hover:bg-slate-800/80"}`}
               >
                 <Eye className="w-3.5 h-3.5" />
-                <span>Collimator Laser Guide</span>
+                <span>Alignment Laser Guide</span>
               </button>
             )}
           </div>
@@ -1418,9 +1435,9 @@ export default function LabTab({ params, detector, summary, isDarkMode }: LabTab
               <div className={`p-4 border rounded-xl flex items-start space-x-3 text-left ${isDarkMode ? "bg-slate-950 border-slate-850" : "bg-slate-50 border-slate-200"}`}>
                 <ShieldAlert className="w-5 h-5 text-orange-400 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Radiological Active Safe-watch</h4>
+                  <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Fluence Reference Class</h4>
                   <p className="text-[11px] font-sans text-slate-500 leading-snug mt-1 font-semibold text-orange-500 dark:text-orange-400">
-                    {summary.radSafetyClassification}
+                    {neutralFluenceClass(summary.radSafetyClassification)}
                   </p>
                 </div>
               </div>
@@ -1439,17 +1456,17 @@ export default function LabTab({ params, detector, summary, isDarkMode }: LabTab
                 </div>
               </div>
 
-              {/* Experimental Matrix diagnostics parameters overlay indices */}
+              {/* Reference-mode diagnostics parameters overlay indices */}
               {params.experimentalModeActive && (
                 <div className="border border-green-500/20 bg-green-500/5 p-4 rounded-xl space-y-2 text-left">
                   <h4 className="text-[10px] uppercase font-bold text-green-400 tracking-wider flex items-center space-x-1.5">
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-ping" />
-                    <span>🏥 Collimator Alignment Active</span>
+                    <span>🔬 Collimator Alignment Active</span>
                   </h4>
                   <div className="grid grid-cols-2 gap-3 text-[10px] font-mono text-slate-400 mt-2">
                     <div>
-                      <span className="block opacity-70">Target Profile:</span>
-                      <span className="font-bold text-slate-100 uppercase text-[11px]">{(params.experimentalApplication || "").replace("_", " ")}</span>
+                      <span className="block opacity-70">Reference Profile:</span>
+                      <span className="font-bold text-slate-100 uppercase text-[11px]">{APPLICATION_LABELS[params.experimentalApplication] ?? (params.experimentalApplication || "").replace("_", " ")}</span>
                     </div>
                     <div>
                       <span className="block opacity-70">Fluence Accuracy Deviation:</span>
@@ -1457,7 +1474,7 @@ export default function LabTab({ params, detector, summary, isDarkMode }: LabTab
                     </div>
                   </div>
                   <p className="text-[10px] italic text-slate-500 mt-1">
-                    Nanoparticle density allows sub-millimeter target dosimetry accuracy feedback.
+                    Nanoparticle density allows sub-millimeter target reference accuracy feedback.
                   </p>
                 </div>
               )}

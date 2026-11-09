@@ -266,4 +266,33 @@ describe('runCherenkovSimulation', () => {
     expect(summary.totalPhotonsDetected).toBe(0);
     expect(summary.signalToNoiseRatioDb).toBe(0);
   });
+
+  it('heuristic channels do not depend on intensityFlux', () => {
+    const heuristics = { bremsstrahlung: true, fluorescence: true };
+    const lowFlux = runCherenkovSimulation(
+      makeParams({ intensityFlux: 1e3, componentsActive: { ...makeParams().componentsActive, ...heuristics } as SimulationParams['componentsActive'] }),
+      heavyWater, sr90
+    );
+    const highFlux = runCherenkovSimulation(
+      makeParams({ intensityFlux: 1e6, componentsActive: { ...makeParams().componentsActive, ...heuristics } as SimulationParams['componentsActive'] }),
+      heavyWater, sr90
+    );
+    const relDiff = (a: number, b: number) => Math.abs(a - b) / Math.max(Math.abs(a), Math.abs(b), Number.MIN_VALUE);
+
+    expect(relDiff(lowFlux.summary.photonsPerParticle, highFlux.summary.photonsPerParticle)).toBeLessThan(1e-9);
+
+    // Per-run totals with many particles so the 0.1-photon output rounding is negligible.
+    // Compare the per-particle emitted value, and confirm the heuristic channel contributes at all.
+    const bigRun = { numberFiredParticles: 1e6 };
+    const withHeuristics = (flux: number) => runCherenkovSimulation(
+      makeParams({ ...bigRun, intensityFlux: flux, componentsActive: { ...makeParams().componentsActive, ...heuristics } as SimulationParams['componentsActive'] }),
+      heavyWater, sr90
+    );
+    const withoutHeuristics = runCherenkovSimulation(makeParams(bigRun), heavyWater, sr90);
+    const lowPerParticle = withHeuristics(1e3).summary.totalPhotonsEmitted / 1e6;
+    const highPerParticle = withHeuristics(1e6).summary.totalPhotonsEmitted / 1e6;
+    const basePerParticle = withoutHeuristics.summary.totalPhotonsEmitted / 1e6;
+    expect(basePerParticle).toBeLessThan(lowPerParticle);
+    expect(relDiff(lowPerParticle, highPerParticle)).toBeLessThan(1e-9);
+  });
 });

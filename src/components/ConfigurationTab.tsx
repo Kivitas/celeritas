@@ -69,7 +69,8 @@ export default function ConfigurationTab({
 
   return (
     <div className="space-y-6" id="configuration-tab">
-      
+      <p className={`text-[10px] ${textSub}`}>Research and teaching simulator. Results are not for clinical, dosimetric, or radiation-safety decisions.</p>
+
       {/* Presets Panel */}
       <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-900/90 to-slate-950/90 border border-white/5 shadow-lg">
         <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl pointer-events-none" />
@@ -115,7 +116,7 @@ export default function ConfigurationTab({
           >
             <span className="text-sm">⚛️</span>
             <div>
-              <div className="font-bold">Reactor Core Sim</div>
+              <div className="font-bold">Reactor Core Model</div>
               <div className="text-[10px] opacity-70 mt-0.5">Heavy Water D2O</div>
             </div>
           </button>
@@ -148,7 +149,7 @@ export default function ConfigurationTab({
           { id: "beam", label: "Beam Characteristics", icon: <Atom className="w-4 h-4" /> },
           { id: "radiator", label: "Radiator & Material", icon: <Layers className="w-4 h-4" /> },
           { id: "detector", label: "Detector & Readout", icon: <Cpu className="w-4 h-4" /> },
-          { id: "toggles", label: "Experimental Toggles", icon: <Sliders className="w-4 h-4" /> },
+          { id: "toggles", label: "Optional Toggles", icon: <Sliders className="w-4 h-4" /> },
           { id: "calculator", label: "Kinematics Calculator", icon: <Calculator className="w-4 h-4" /> },
           { id: "formulas", label: "Reference Manual", icon: <BookOpen className="w-4 h-4" /> },
         ].map((tab) => (
@@ -742,7 +743,7 @@ export default function ConfigurationTab({
           <div className="flex items-center space-x-2 border-b border-slate-100/10 pb-3">
             <Compass className="w-5 h-5 text-orange-500" />
             <h3 className={`text-xs font-extrabold tracking-wider uppercase font-sans ${textTitle}`}>
-              Medium & Experimental Physics
+              Medium & Extended Physics
             </h3>
           </div>
 
@@ -798,7 +799,7 @@ export default function ConfigurationTab({
                   <option value="DESY-II">DESY II Electron</option>
                   <option value="SuperKEKB">SuperKEKB Synchrotron</option>
                   <option value="Brookhaven-RHIC">Brookhaven RHIC</option>
-                  <option value="BioExperimental-Proton-Suite">BioExperimental Proton Suite</option>
+                  <option value="BioExperimental-Proton-Suite">Proton Beam Suite</option>
                 </select>
               </div>
               <div className="space-y-1">
@@ -995,11 +996,11 @@ export default function ConfigurationTab({
              </div>
           </div>
 
-          {/* Experimental Experimental Mode Panel */}
+          {/* Dose-rate reference mode panel */}
           <div className={`p-3 border rounded-lg space-y-2.5 ${isDarkMode ? "bg-slate-950/80 border-slate-800" : "bg-slate-150/40 border-slate-200"}`}>
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-orange-500 uppercase tracking-wider flex items-center space-x-1">
-                <span>🏥 Experimental Experimental Mode</span>
+                <span>🔬 Dose-Rate Reference Mode</span>
               </span>
               <input
                 type="checkbox"
@@ -1013,23 +1014,23 @@ export default function ConfigurationTab({
             {params.experimentalModeActive && (
               <div className="space-y-2 animate-fade border-t border-slate-200 dark:border-slate-800 pt-2.5">
                 <div className="space-y-1">
-                  <label className={`text-[9px] uppercase font-bold block ${textLabel}`}>Experimental Practice Application</label>
+                  <label className={`text-[9px] uppercase font-bold block ${textLabel}`}>Reference Application</label>
                   <select
                     value={params.experimentalApplication}
                     onChange={(e) => updateParam("experimentalApplication", e.target.value as any)}
                     className={`w-full rounded px-2.5 py-1.5 text-[11px] outline-none font-semibold ${inputBg}`}
                   >
-                    <option value="imrt">IMRT Radiotherapy Dosimetry</option>
-                    <option value="proton_therapy_verify">Proton Range Verification</option>
-                    <option value="nuclear_dosimetry">Nuclear Medicine (Y-90 Microspheres)</option>
-                    <option value="ophthalmic_dosimetry">Ru-106 Ophthalmic Plaque Dosimetry</option>
-                    <option value="molecular_imaging">CLI Molecular Diagnostics</option>
+                    <option value="imrt">IMRT Beam Reference (reference only)</option>
+                    <option value="proton_therapy_verify">Proton Range Reference (reference only)</option>
+                    <option value="nuclear_dosimetry">Isotope Source Reference (Y-90 Microspheres)</option>
+                    <option value="ophthalmic_dosimetry">Alternative application (reference only)</option>
+                    <option value="molecular_imaging">CLI Molecular Imaging Reference</option>
                   </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-slate-300">
                   <div>
-                    <label className={`text-[9px] uppercase font-bold block ${textLabel}`}>Fluence Rate (Gy/min)</label>
+                    <label className={`text-[9px] uppercase font-bold block ${textLabel}`}>Dose-Rate Reference (Gy/min)</label>
                     <input
                       type="number"
                       step="0.05"
@@ -1041,7 +1042,7 @@ export default function ConfigurationTab({
                     />
                   </div>
                   <div>
-                    <label className={`text-[9px] uppercase font-bold block ${textLabel}`}>Cum. Fluence (Gy)</label>
+                    <label className={`text-[9px] uppercase font-bold block ${textLabel}`}>Cumulative Reference (Gy)</label>
                     <input
                       type="number"
                       step="0.1"
