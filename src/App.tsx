@@ -12,7 +12,7 @@ import {
   MUON_MASS_MEV,
 } from "./core/physics";
 import { validateRunConfig, configToEngine, type RunConfig } from "./core/runConfig";
-import { sendAIMessage, loadApiKeys, saveApiKeys, getActiveProvider, AI_PROVIDERS } from "./services/ai";
+import { sendAIMessage, loadApiKeys, saveApiKeys, clearStoredApiKeys, loadRememberFlag, saveRememberFlag, getActiveProvider, AI_PROVIDERS } from "./services/ai";
 import { MATERIAL_PRESETS, ISOTOPE_PRESETS } from "./data/presets";
 import { BEAMLINE_PRESETS } from "./data/beamlinePresets";
 
@@ -142,13 +142,22 @@ export default function App() {
   );
   const [assistantQuery, setAssistantQuery] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
-  const [apiKeys, setApiKeys] = useState<Record<string, string>>(() => loadApiKeys());
+  // Keys live in memory by default. They are written to localStorage only after the user opts in (plan T8.2).
+  const [rememberKeys, setRememberKeys] = useState<boolean>(() => loadRememberFlag());
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>(() => (loadRememberFlag() ? loadApiKeys() : {}));
   const [showAiConfig, setShowAiConfig] = useState(false);
 
   const updateApiKey = (id: string, key: string) => {
     const newKeys = { ...apiKeys, [id]: key };
     setApiKeys(newKeys);
-    saveApiKeys(newKeys);
+    if (rememberKeys) saveApiKeys(newKeys);
+  };
+
+  const setRemember = (on: boolean) => {
+    setRememberKeys(on);
+    saveRememberFlag(on);
+    if (on) saveApiKeys(apiKeys);
+    else clearStoredApiKeys();
   };
 
   // PDF export loading state
@@ -541,6 +550,11 @@ export default function App() {
               {showAiConfig && (
                 <div className="mb-4 p-3 bg-slate-800/50 rounded-lg space-y-2 border border-slate-700">
                   <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-300">AI Provider Keys</h4>
+                  <p className="text-[9px] text-slate-400">Keys are kept in memory and are lost on reload unless you choose to remember them. Requests go directly from this browser to the provider.</p>
+                  <label className="flex items-start gap-2 text-[9px] text-amber-300">
+                    <input type="checkbox" checked={rememberKeys} onChange={(e) => setRemember(e.target.checked)} />
+                    <span>Remember keys on this device. They are stored in localStorage, which any script on this page can read.</span>
+                  </label>
                   {AI_PROVIDERS.map((p) => (
                     <div key={p.id} className="flex flex-col">
                       <label className="text-[9px] text-slate-400 mb-1">{p.label}</label>
@@ -558,6 +572,7 @@ export default function App() {
               )}
 
               {/* Chat outcome console */}
+              <p className="text-[9px] opacity-70">AI-generated. Not verified against the simulator. Numbers should come from the Results and Validation tabs.</p>
               <div className={`whitespace-pre-wrap border p-4 rounded-lg text-xs font-mono leading-relaxed max-h-[420px] min-h-[260px] overflow-y-auto ${isDarkMode ? "bg-slate-950 border-slate-800 text-emerald-400" : "bg-slate-50 border-slate-200 text-emerald-800"}`}>
                 {assistantLogs}
               </div>

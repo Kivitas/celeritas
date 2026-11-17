@@ -43,7 +43,35 @@ export function loadApiKeys(): Record<string, string> {
   }
 }
 
-// See loadApiKeys: keys saved here are readable by any script on the page.
+const REMEMBER_KEY = "celeritas_ai_remember";
+
+// Whether the user opted in to storing keys. Itself stored only when the user chooses (plan T8.2).
+export function loadRememberFlag(): boolean {
+  try {
+    return localStorage.getItem(REMEMBER_KEY) === "yes";
+  } catch {
+    return false;
+  }
+}
+
+export function saveRememberFlag(on: boolean) {
+  try {
+    if (on) localStorage.setItem(REMEMBER_KEY, "yes");
+    else localStorage.removeItem(REMEMBER_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+export function clearStoredApiKeys() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+// See loadApiKeys: keys saved here are readable by any script on the page. Called only after opt-in.
 export function saveApiKeys(keys: Record<string, string>) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(keys));
@@ -59,10 +87,17 @@ export function getActiveProvider(keys: Record<string, string>) {
   return null;
 }
 
+// Model identifiers in one place. Last checked against each provider's published model list: NOT re-verified
+// in this change. Update when a provider retires a model.
+export const AI_MODELS_CHECKED_ON = "not re-verified (set when checked)";
+
+// The assistant must not invent numbers. It is given the simulator output as JSON and told to use only it.
 function buildSystemPrompt() {
-  return `You are the AI Assistant for the Celeritas Spectrometry Lab, an expert in Cherenkov radiation, particle physics, and detector optics. 
-Analyze simulation results, explain physics concepts like Frank-Tamm limits or Sellmeier dispersion, and recommend sensor configurations. 
-Be concise, use markdown and LaTeX, and rely strictly on physical principles.`;
+  return `You are the AI assistant for the Celeritas Cherenkov simulator. Explain the physics and the configuration.
+Rules:
+- Quote numbers only if they appear in the JSON context you are given. Do not compute or recall other values.
+- Say when the answer depends on a limitation listed in the context (for example: no energy-loss model for some materials, no density effect for electrons above 1 MeV).
+- Your answer is AI-generated and is not verified against the simulator. Be concise.`;
 }
 
 // Extracts a human-readable message from a provider error body, then throws
