@@ -30,7 +30,7 @@ export const TheoryTab: React.FC = () => {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-slate-100">Physics Theory & Formulas</h2>
-            <p className="text-slate-400 text-sm">Mathematical models governing the Monte Carlo particle simulation</p>
+            <p className="text-slate-400 text-sm">Formulas used by the analytic Cherenkov model, and reference formulas for context</p>
           </div>
         </div>
 

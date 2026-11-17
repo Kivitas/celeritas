@@ -26,7 +26,6 @@ const LabTab = lazy(() => import("./components/LabTab"));
 const RawBatchTab = lazy(() => import("./components/RawBatchTab"));
 const ExportsTab = lazy(() => import("./components/ExportsTab"));
 const ValidationTab = lazy(() => import("./components/ValidationTab"));
-const MonteCarloTab = lazy(() => import("./components/MonteCarloTab"));
 const InstrumentsTab = lazy(() => import("./components/InstrumentsTab"));
 const TheoryTab = lazy(() => import("./components/TheoryTab").then((m) => ({ default: m.TheoryTab })));
 import { motion, AnimatePresence } from "motion/react";
@@ -52,131 +51,32 @@ import {
 } from "lucide-react";
 
 const DEFAULT_PARAMS: SimulationParams = {
-    isotopeId: "sr90",
-    customIsotopeName: "Custom Physical Beam",
-    beamEnergyMeV: 0.546,
-    energyUnit: "MeV",
-    isRelativisticCalculated: true,
-    intensityFlux: 370000,
-    incidenceAngleDeg: 0,
-    magneticFieldT: 0.0,
-    beamProfile: "Gaussian",
-    beamFwhmUm: 200.0,
-    
-    materialId: "heavy_water",
-    nanoparticlePeakNm: 520,
-    nanoparticlesActive: false,
-    nanoparticleConcentrationPpm: 50,
-    radiatorThicknessMm: 15.0, // Used internally as general target material thickness (x)
+  isotopeId: "sr90",
+  customIsotopeName: "",
+  beamEnergyMeV: 0.546,
+  energyUnit: "MeV",
+  beamCharge: -1,
+  customRestMassMeV: 0.51099895,
+  customChargeE: -1,
+  magneticFieldT: 1.5,
+  beamFwhmUm: 200,
+  trackLengthMm: 10,
+  numberFiredParticles: 100,
+  chamberTemperatureK: 293.15,
+  materialId: "heavy_water",
+  radiatorThicknessMm: 15,
+  spectralRangeStartNm: 300,
+  spectralRangeEndNm: 800,
+  binResolutionNm: 10,
+  componentsActive: { primaryCherenkov: true },
+  daq: { deadtimeFraction: 0 },
+};
 
-    spectralRangeStartNm: 300,
-    spectralRangeEndNm: 800,
-    binResolutionNm: 10,
-
-    componentsActive: {
-      primaryCherenkov: true,
-      kaonDecay: false,
-      bMesonDecay: false,
-      crystalChanneling: false,
-      lowEnergyNeutrons: false,
-      darkMatterScattering: false,
-      axionConversion: false,
-      gravitationalWaveLensing: false,
-      planckScaleEffects: false,
-      magneticMonopoleSignatures: false,
-      hawkingRadiation: false,
-    },
-
-    chamberMaterial: "Vacuum",
-    
-    detectorSubsystems: {
-      pixelTracker: true,
-      stripTracker: false,
-      tpc: false,
-      driftChamber: false,
-      ecal: true,
-      hcal: false,
-      muonSpectrometer: false,
-      rich: false,
-    },
-    
-    reconstruction: {
-      kalmanFilter: true,
-      helixFitting: false,
-      vertexReconstruction: false,
-      mlJetClassification: false,
-      mlAnomalyDetection: false,
-    },
-  
-    simulationMode: "stochastic",
-    
-    daq: {
-      l1Trigger: true,
-      highLevelTrigger: false,
-      deadtimeFraction: 0.05,
-      radiationDamagePercent: 0.0, 
-      sensorDefects: "low",
-    },
-  
-    exoticPhysics: {
-      supersymmetry: false,
-      darkMatter: false,
-      magneticMonopoles: false,
-      axions: false,
-      sterileNeutrinos: false,
-      extraDimensions: false,
-    },
-
-    // Advanced beam properties
-    beamDivergenceMrad: 0.3,
-    beamCharge: 1,
-    beamPulseWidthNs: 12,
-    trackLengthMm: 10.0,
-    
-    // Macro Fields
-    magneticFieldTesla: 1.5,
-    electricFieldKvM: 0.0,
-
-    // Monte Carlo & Generator Parameters
-    monteCarloGenerator: "NONE",
-    eventGenerator: "Standalone",
-    mcEventsPerRun: 10000,
-    cosmicRaysActive: false,
-    ambientCosmicRays: false,
-    gravitationalLensingActive: false,
-    triggerLevel1Active: true,
-    mlJetReconstruction: false,
-    daqDeadTimeFraction: 0.05,
-
-    // Extra detailed particle info
-    particleSpin: "1/2",
-    baryonNumber: 0,
-    leptonNumber: 1,
-    customRestMassMeV: 105.658,
-    customChargeE: -1,
-
-    // Particle Trigger options
-    numberFiredParticles: 150,
-
-    // Lab setup properties
-    labFacility: "SPS-Synchrotron",
-    chamberShape: "Cylindrical-Beam-Pipe",
-    dimensionMode: "3D-Isometric-Chambers",
-    chamberTemperatureK: 293.15, // room temp 20°C
-
-    // Experimental dosimetry Experimental mode state
-    experimentalModeActive: false,
-    experimentalApplication: "none",
-    fluenceRateGyMin: 0.05,
-    cumulativeFluenceGy: 0.1,
-  };
-
-type TabId = "configure" | "montecarlo" | "lab" | "batch" | "exports" | "validation" | "instruments" | "theory";
+type TabId = "configure" | "lab" | "batch" | "exports" | "validation" | "instruments" | "theory";
 
 // Mobile tab bar: every tab, with a short label for the narrow header strip
 const MOBILE_TABS: { id: TabId; short: string }[] = [
   { id: "configure", short: "Sim" },
-  { id: "montecarlo", short: "MC" },
   { id: "lab", short: "3D" },
   { id: "batch", short: "Batch" },
   { id: "exports", short: "Export" },
@@ -186,34 +86,9 @@ const MOBILE_TABS: { id: TabId; short: string }[] = [
 ];
 
 const DEFAULT_PARAMS_DETECTOR: DetectorSettings = {
-  chipset: "Timepix3",
-  geometry: "256x256",
-  pixelPitchUm: 55.0,
-  thresholdKeV: 1.2,
-  noiseRmsKeV: 0.8,
-  coincidenceNs: 20,
-  chargeSharingActive: false,
-  clusteringAlgo: "Center-of-Gravity",
-
-  detectorTemperatureC: 20,
-  leakageCurrentNa: 1.5,
-  depletionVoltageV: 150,
-  substrateThicknessUm: 300,
-  quantumEfficiencyPct: 90,
-  pixelDeadTimeNs: 100,
-  activeCoolingType: "Thermoelectric Peltier",
-  biasVoltageV: 50,
-  dopingDensityPtype: 1.0,
-  readoutMode: "ToA (Time of Arrival)",
-  gainMode: "Medium",
+  quantumEfficiencyPct: 30,
+  darkCountRateHz: 20,
   frameRateHz: 1000,
-  dynamicRangeBits: 10,
-  energyResolutionPercent: 1.5,
-  timingResolutionPs: 100,
-  spatialResolutionUm: 5.0,
-  darkCountRateHz: 100,
-  afterpulsingProbability: 0.01,
-  crosstalkPercent: 2.0,
 };
 
 // Builds one batch row, deriving beta from the kinetic energy and particle rest mass
@@ -332,7 +207,6 @@ export default function App() {
     setParams((prev) => ({
       ...prev,
       ...preset.params,
-      componentsActive: { ...prev.componentsActive, ...preset.componentsActive },
     }));
 
     if (preset.detector) {
@@ -419,7 +293,6 @@ export default function App() {
                 <Flame className="w-3.5 h-3.5 text-orange-400" />
                 <span className="text-[11px] font-bold text-slate-300 uppercase tracking-widest">
                   {activeTab === "configure" && "Simulation Controls"}
-                  {activeTab === "montecarlo" && "Monte Carlo Generator"}
                   {activeTab === "lab" && "3D Chamber Lab"}
                   {activeTab === "batch" && "Batch Accelerator"}
                   {activeTab === "exports" && "Analytical Predictors"}
@@ -503,14 +376,6 @@ export default function App() {
                     detector={detector}
                     setDetector={setDetector}
                     onLoadPreset={loadPresetSetup}
-                    isDarkMode={isDarkMode}
-                  />
-                )}
-
-                {activeTab === "montecarlo" && (
-                  <MonteCarloTab
-                    params={params}
-                    setParams={setParams}
                     isDarkMode={isDarkMode}
                   />
                 )}
@@ -745,12 +610,9 @@ export default function App() {
                 </div>
                 <div className="grid grid-cols-2 gap-2.5">
                   {[
-                    { label: "Chipset", value: detector.chipset, color: "text-orange-400" },
-                    { label: "Geometry", value: detector.geometry, color: "text-orange-400" },
-                    { label: "Threshold", value: `${detector.thresholdKeV} keV`, color: "text-white" },
-                    { label: "Cooling", value: detector.activeCoolingType, color: "text-white" },
-                    { label: "Quantum Eff.", value: `${detector.quantumEfficiencyPct}%`, color: "text-white" },
-                    { label: "Bias Voltage", value: `${detector.biasVoltageV} V`, color: "text-white" },
+                    { label: "Quantum Eff.", value: `${detector.quantumEfficiencyPct}%`, color: "text-orange-400" },
+                    { label: "Dark counts", value: `${detector.darkCountRateHz} Hz`, color: "text-white" },
+                    { label: "Frame rate", value: `${detector.frameRateHz} Hz`, color: "text-white" },
                   ].map((item) => (
                     <div key={item.label} className="p-2.5 rounded-lg bg-white/5 border border-white/5">
                       <div className="text-[8px] uppercase tracking-widest text-slate-500 font-mono mb-1">{item.label}</div>
@@ -778,7 +640,6 @@ export default function App() {
                       onClick={() => loadPresetSetup(p.id)}
                       className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-[10px] font-semibold border border-white/5 bg-white/5 hover:bg-orange-500/10 hover:border-orange-500/30 hover:text-orange-400 transition-all text-slate-300"
                     >
-                      <span className="text-base">{p.icon}</span>
                       <span>{p.label}</span>
                     </button>
                   ))}

@@ -52,81 +52,6 @@ export default function ExportsTab({ params, detector, onGenerateReport, isDarkM
   return (
     <div className="space-y-6 pb-24" id="exports-tab">
       
-      {/* ROOT / HDF5 Event Data Exporter */}
-      <div className={`border rounded-xl p-6 shadow-lg ${cardBg}`}>
-         <div className="flex items-center space-x-2 border-b border-slate-100/10 pb-3 mb-4">
-            <Download className="text-orange-500 w-5 h-5" />
-            <h3 className={`text-xs font-extrabold uppercase tracking-wider ${textTitle}`}>
-              Scientific Data Export & MC Events
-            </h3>
-          </div>
-          <p className="text-xs opacity-70 mb-5 font-sans leading-relaxed">
-            Generate massive batches of randomized Monte Carlo events using currently selected `{params.monteCarloGenerator}` physics list. Formats are compatible with traditional HEP offline analysis frameworks (ROOT, Pandas, Parquet).
-          </p>
-          <div className="flex flex-wrap gap-3">
-             <button
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold border transition ${btnSec}`}
-                onClick={exportPDF}
-             >
-                <FileText className="w-4 h-4 text-orange-500" />
-                <span>Export Executive Report (PDF)</span>
-             </button>
-             <button
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold border transition ${btnSec}`}
-             >
-                <FileText className="w-4 h-4 text-emerald-500" />
-                <span>LaTeX Source</span>
-             </button>
-             <button
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold bg-slate-800 text-white border border-slate-700 hover:border-orange-500`}
-             >
-                <span className="font-mono text-[10px] bg-slate-700 px-1 py-0.5 rounded mr-1">TTree</span>
-                <span>Generate .root</span>
-             </button>
-             <button
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold bg-slate-800 text-white border border-slate-700 hover:border-orange-500`}
-             >
-                <span className="font-mono text-[10px] bg-slate-700 px-1 py-0.5 rounded mr-1">H5</span>
-                <span>Export Dataset (.h5)</span>
-             </button>
-             <button
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold bg-slate-800 text-white border border-slate-700 hover:border-orange-500`}
-             >
-                <span className="font-mono text-[10px] bg-slate-700 px-1 py-0.5 rounded mr-1">PQT</span>
-                <span>Parquet Events</span>
-             </button>
-          </div>
-          
-          <div className="mt-5 grid grid-cols-3 gap-4">
-              <div className={`p-3 rounded-lg border text-center ${metricsBg}`}>
-                 <span className="block text-[9px] uppercase tracking-wider opacity-60">MC Statistics</span>
-                 <span className="block text-sm font-bold text-orange-500 mt-1">{params.mcEventsPerRun.toLocaleString()} Events</span>
-              </div>
-              <div className={`p-3 rounded-lg border text-center ${metricsBg}`}>
-                 <span className="block text-[9px] uppercase tracking-wider opacity-60">Particles per Batch</span>
-                 <span className="block text-sm font-bold text-slate-300 mt-1">{params.numberFiredParticles.toLocaleString()} particles</span>
-              </div>
-              <div className={`p-3 rounded-lg border text-center ${metricsBg}`}>
-                 <span className="block text-[9px] uppercase tracking-wider opacity-60">DAQ Buffer</span>
-                 <span className="block text-sm font-bold text-emerald-500 mt-1">{(params.daqDeadTimeFraction * 100).toFixed(1)}% Dead-time</span>
-              </div>
-          </div>
-      </div>
-
-      {/* Sensitivity and ML predictor notes */}
-      <div className={`border rounded-xl p-4 shadow-lg text-xs font-sans ${cardBg}`}>
-        <p className="leading-relaxed opacity-75">
-          Sensitivity analysis and ML predictors were removed because they were not computed from the physics model.
-        </p>
-      </div>
-
-      {/* Correlation analysis removed: the previous matrix was hardcoded, not computed. */}
-      <div className={`border rounded-xl p-4 shadow-lg text-xs font-sans ${cardBg}`}>
-        <p className="leading-relaxed opacity-75">
-          The Spearman correlation matrix was removed because its values were hardcoded rather than computed from the model.
-        </p>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Academic & Laboratory exports */}
         <div className={`border rounded-xl p-6 shadow-lg flex flex-col justify-between ${cardBg}`}>
@@ -169,14 +94,9 @@ export default function ExportsTab({ params, detector, onGenerateReport, isDarkM
             </div>
           </div>
 
-          <div className={`p-4 border rounded-lg space-y-3 mt-4 text-xs ${metricsBg}`}>
-            <div className="flex items-center space-x-1.5 font-bold">
-              <CheckCircle className="text-orange-500 w-4 h-4" />
-              <span>Citable DOI Ready</span>
-            </div>
+          <div className={`p-4 border rounded-lg space-y-2 mt-4 text-xs ${metricsBg}`}>
             <p className="text-[10px] opacity-75 font-sans leading-relaxed">
-              Our scientific spectrometry simulator allows you to export high-fidelity data and 
-plots for citation in scientific publications.
+              No DOI has been assigned to this software yet. Cite the repository (see CITATION.cff) until a release is archived.
             </p>
           </div>
         </div>

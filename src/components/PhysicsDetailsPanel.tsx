@@ -57,13 +57,13 @@ export default function PhysicsDetailsPanel({ params, summary, isDarkMode, activ
   const textLabel = isDarkMode ? "text-slate-400" : "text-slate-500";
 
   // Real formulas for the synchrotron, radius and attenuation values
-  const hasField = params.magneticFieldTesla > 0;
+  const hasField = params.magneticFieldT > 0;
   const particleMassMeV = params.isotopeId === "proton_sps" ? 938.272088 : 0.51099895;
   const radiusText = hasField
-    ? `${larmorRadiusM(momentumMeV(params.beamEnergyMeV, particleMassMeV), params.magneticFieldTesla).toPrecision(4)} m`
+    ? `${larmorRadiusM(momentumMeV(params.beamEnergyMeV, particleMassMeV), params.magneticFieldT).toPrecision(4)} m`
     : "n/a";
   const criticalEnergyText = hasField
-    ? `${synchrotronCriticalEnergyKeV(params.beamEnergyMeV / 1000, params.magneticFieldTesla).toFixed(2)} keV`
+    ? `${synchrotronCriticalEnergyKeV(params.beamEnergyMeV / 1000, params.magneticFieldT).toFixed(2)} keV`
     : "n/a";
   const { mu_a, mu_s } = getMediumCoefficients(500, activeMaterialPreset.id);
   const muEffPerMm = calculateEffectiveAttenuation(mu_a, mu_s, activeMaterialPreset.anisotropyG);
@@ -164,8 +164,6 @@ export default function PhysicsDetailsPanel({ params, summary, isDarkMode, activ
             De-excitation of excited molecular/atomic states. Emission occurs at:
           </p>
           <ul className={`mt-1 space-y-1 text-[9px] ${textLabel}`}>
-            <li>• <span className={`font-bold ${isDarkMode ? "text-purple-400" : "text-purple-600"}`}>Peak wavelength</span> ~{params.nanoparticlePeakNm} nm (if dopants active)</li>
-            <li>• <span className={`font-bold ${isDarkMode ? "text-purple-400" : "text-purple-600"}`}>Light yield</span> proportional to deposited energy dE/dx</li>
           </ul>
         </div>
 
@@ -237,7 +235,7 @@ export default function PhysicsDetailsPanel({ params, summary, isDarkMode, activ
         </div>
 
         {/* Synchrotron Radiation */}
-        {params.magneticFieldTesla > 0 && (
+        {params.magneticFieldT > 0 && (
           <div className={`p-3 rounded-lg border ${isDarkMode ? "bg-violet-950/20 border-violet-800/30" : "bg-violet-50 border-violet-200"}`}>
             <div className="flex items-center space-x-2 mb-2">
               <Activity className="w-4 h-4 text-violet-500" />
@@ -246,7 +244,7 @@ export default function PhysicsDetailsPanel({ params, summary, isDarkMode, activ
               </h4>
             </div>
             <p className={`text-[9px] leading-relaxed ${textLabel}`}>
-              Curvature radiation in magnetic field B = {params.magneticFieldTesla} T:
+              Curvature radiation in magnetic field B = {params.magneticFieldT} T:
             </p>
             <ul className={`mt-1 space-y-1 text-[9px] ${textLabel}`}>
               <li>• <span className={`font-bold ${isDarkMode ? "text-violet-400" : "text-violet-600"}`}>Critical energy</span> {criticalEnergyText}</li>

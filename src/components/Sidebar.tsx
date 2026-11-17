@@ -7,8 +7,8 @@ import React from "react";
 import { Activity, Monitor, Cpu, GitBranch, Compass, X, Zap, ChevronRight } from "lucide-react";
 
 interface SidebarProps {
-  activeTab: "configure" | "montecarlo" | "lab" | "batch" | "exports" | "validation" | "instruments" | "theory";
-  onTabChange: (tab: "configure" | "montecarlo" | "lab" | "batch" | "exports" | "validation" | "instruments" | "theory") => void;
+  activeTab: "configure" | "lab" | "batch" | "exports" | "validation" | "instruments" | "theory";
+  onTabChange: (tab: "configure" | "lab" | "batch" | "exports" | "validation" | "instruments" | "theory") => void;
   isOpen: boolean;
   onClose: () => void;
   isMobile: boolean;
@@ -16,7 +16,6 @@ interface SidebarProps {
 
 const navItems = [
   { id: "configure" as const, label: "Simulation Controls", icon: Activity, desc: "Particle beam & detector config" },
-  { id: "montecarlo" as const, label: "Monte Carlo Engine", icon: Cpu, desc: "Event generation & physics" },
   { id: "lab" as const, label: "3D Chamber Lab", icon: Monitor, desc: "Interactive visualization" },
   { id: "batch" as const, label: "Batch Accelerator", icon: Cpu, desc: "Multi-sample processing" },
   { id: "exports" as const, label: "Analytical Predictors", icon: GitBranch, desc: "Performance forecasting" },
