@@ -20,3 +20,4 @@ export * from "./cherenkov";
 export * from "./dispersion";
 export * from "./transport";
 export * from "./simulate";
+export * from "./stopping";

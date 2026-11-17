@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "lint": "eslint src",
-    "test:coverage": "vitest run --coverage --coverage.include=src/core --coverage.thresholds.lines=90"
+    "test:coverage": "vitest run --coverage --coverage.include=src/core --coverage.thresholds.lines=90",
+    "validate": "VALIDATE_REPORT=1 vitest run validation"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
