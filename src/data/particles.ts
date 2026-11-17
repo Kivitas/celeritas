@@ -32,10 +32,16 @@ export const PARTICLES: Record<number, ParticleInfo> = {
   2212: { pdgId: 2212, name: "proton", massMeV: 938.27208943, massUncertaintyMeV: 0.00000029, source: `PDG 2026, ${PDG_PAGE}/Particle.action?node=S016`, verified: true },
   [-2212]: { pdgId: -2212, name: "antiproton", massMeV: 938.27208943, massUncertaintyMeV: 0.00000029, source: `PDG 2026, ${PDG_PAGE}/Particle.action?node=S016`, verified: true },
   2112: { pdgId: 2112, name: "neutron", massMeV: 939.5654219, massUncertaintyMeV: 0.0000005, source: `PDG 2026, ${PDG_PAGE}/Particle.action?node=S017`, verified: true },
-  // Not yet verified against the PDG (plan T2.1). Values below are retained from earlier code.
+  321: { pdgId: 321, name: "kaon (charged)", massMeV: 493.677, massUncertaintyMeV: 0.013, source: `PDG 2026, ${PDG_PAGE}/Particle.action?node=S010 (HTML page value; the PDG API gives 0.015 for the same mass)`, verified: true },
+  [-321]: { pdgId: -321, name: "kaon (charged, antiparticle)", massMeV: 493.677, massUncertaintyMeV: 0.013, source: `PDG 2026, ${PDG_PAGE}/Particle.action?node=S010 (HTML page value)`, verified: true },
+  1000010020: { pdgId: 1000010020, name: "deuteron", massMeV: 1875.61294500, massUncertaintyMeV: 0.00000058, source: "PDG 2026 Physical Constants review, Table 1.1, https://pdg.lbl.gov/2026/reviews/rpp2026-rev-phys-constants.pdf", verified: true },
+  // Not found in the PDG pages fetched so far (plan T2.1). Values below are retained from earlier code.
   1000020040: { pdgId: 1000020040, name: "alpha (He-4 nucleus)", massMeV: 3727.3794, source: "earlier code, not checked against PDG", verified: false },
   1000060120: { pdgId: 1000060120, name: "carbon-12 ion", massMeV: 11177.928, source: "earlier code, not checked; this is the neutral-atom mass, a bare nucleus is lighter", verified: false },
 };
+
+/** Atomic mass unit in MeV/c^2. PDG 2026 Physical Constants review, Table 1.1 (931.494 103 72 +- 0.000 000 29). */
+export const ATOMIC_MASS_UNIT_MEV = 931.49410372;
 
 /** Rest mass in MeV/c^2 for a PDG id, or undefined when the particle is not in the table. */
 export function particleMassMeV(pdgId: number): number | undefined {
