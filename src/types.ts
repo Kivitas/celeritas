@@ -7,7 +7,7 @@ export interface MaterialPreset {
   id: string;
   name: string;
   refractiveIndexStatic: number;
-  sellmeierCoeffs?: { B1: number; C1: number; B2: number; C2: number; B3?: number; C3?: number; B4?: number; C4?: number }; // Sellmeier terms, C in um^2
+  sellmeierCoeffs?: { B1: number; C1: number; B2?: number; C2?: number; B3?: number; C3?: number; B4?: number; C4?: number }; // Sellmeier terms, C in um^2
   mu_a_base: number; // UNUSED: not read by the engine (see plan T2.2)
   mu_s_base: number; // UNUSED: not read by the engine (see plan T2.2)
   anisotropyG: number; // Henyey-Greenstein g factor

@@ -18,7 +18,8 @@ export function getRefractiveIndexAt(wavelengthNm: number, preset: MaterialPrese
   if (preset.sellmeierCoeffs) {
     const c = preset.sellmeierCoeffs;
     const wlSq = wlUm * wlUm;
-    let nSq = 1.0 + (c.B1 * wlSq) / (wlSq - c.C1) + (c.B2 * wlSq) / (wlSq - c.C2);
+    let nSq = 1.0 + (c.B1 * wlSq) / (wlSq - c.C1);
+    if (c.B2 !== undefined && c.C2 !== undefined) nSq += (c.B2 * wlSq) / (wlSq - c.C2);
     if (c.B3 !== undefined && c.C3 !== undefined) nSq += (c.B3 * wlSq) / (wlSq - c.C3);
     if (c.B4 !== undefined && c.C4 !== undefined) nSq += (c.B4 * wlSq) / (wlSq - c.C4);
     if (nSq > 0) n = Math.sqrt(nSq);

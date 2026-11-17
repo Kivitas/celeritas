@@ -59,3 +59,25 @@ describe("dispersion checks against fetched sources (plan T2.2)", () => {
     });
   }
 });
+
+import { tabulatedAbsorptionPerMm } from "../core/transport";
+
+describe("PMMA and water absorption (plan T2.2, T2.3)", () => {
+  const get = (id: string) => MATERIAL_PRESETS.find((m) => m.id === id)!;
+
+  it("PMMA (Sultanova 2009) reproduces the reproduced n(589.3 nm) = 1.490536", () => {
+    expect(Math.abs(getRefractiveIndexAt(589.3, get("acrylic"), 293.15) - 1.490536)).toBeLessThan(1e-5);
+  });
+
+  it("water absorption at 450 nm is 4 pi k / lambda with k = 1.02e-9 from Hale and Querry (0.0285 1/m)", () => {
+    const alphaPerM = tabulatedAbsorptionPerMm(450, get("water").absorptionTable!)! * 1000;
+    expect(alphaPerM).toBeCloseTo((4 * Math.PI * 1.02e-9) / 450e-9, 3);
+  });
+
+  it("the water absorption table is positive and covers 400-650 nm, as its source states", () => {
+    const table = get("water").absorptionTable!;
+    expect(table.every((p) => p.alphaPerM > 0)).toBe(true);
+    expect(table[0].wavelengthNm).toBe(400);
+    expect(table[table.length - 1].wavelengthNm).toBe(650);
+  });
+});
