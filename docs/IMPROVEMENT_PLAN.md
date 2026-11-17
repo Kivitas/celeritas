@@ -6,6 +6,16 @@ It is written to be executed by models working one task at a time with no memory
 
 ---
 
+## 0. Status (updated as work lands)
+
+| Phase | State | Notes |
+|---|---|---|
+| 0 Guard rails | Done | CI on PRs, lint, strict TS, regression snapshot, coverage gate (core 93%). T0.2 leaves component dead-code as warnings. |
+| 1 Remove invented output | Done | Synthetic plots, Monte Carlo tab, inert controls, fabricated PDF/export text, formula library cut to 15 model-relevant entries. The LabTab is now an illustration. |
+| 2 Sourced data | Closed with deviations | T2.1: K±, deuteron, u sourced; alpha and C-12 still unverified (not found in PDG pages). T2.2: 8 materials verified (fused silica, N-BK7, CaF2, sapphire, MgF2, LiF, water, PMMA), plan asked for about 12; PbF2 excluded because the convention could not be settled. T2.3: Beer-Lambert path implemented; water absorption from Hale and Querry 1973, not Pope and Fry 1997 (not obtainable), covering 400-650 nm only. |
+| 3 Physics core | In progress | T3.1 split done (no behaviour change). T3.2 precision done. T3.4 energy loss next: NIST ESTAR and PSTAR values for water are in hand. |
+| 4-9 | Not started | |
+
 ## 1. Where the project stands
 
 Baseline, measured on this commit:
