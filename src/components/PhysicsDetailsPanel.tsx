@@ -135,9 +135,9 @@ export default function PhysicsDetailsPanel({ params, summary, isDarkMode, activ
               </div>
             </div>
             <div>
-              <div className={`text-[8px] uppercase ${textLabel}`}>SNR Level</div>
+              <div className={`text-[8px] uppercase ${textLabel}`}>S/√(S+B)</div>
               <div className={`text-sm font-bold font-mono ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>
-                {summary.signalToNoiseRatioDb.toFixed(1)} dB
+                {summary.signalToNoiseRatio.toFixed(2)}
               </div>
             </div>
           </div>

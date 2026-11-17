@@ -73,7 +73,7 @@ export default React.memo(function DynamicPlots({ spectra, summary, isDarkMode }
         <Stat label="Cherenkov threshold" value={summary.isCherenkovGenerated ? `${summary.cherenkovThresholdEnergyMeV.toFixed(3)} MeV` : "not reached"} />
         <Stat label="Cone angle (mean)" value={summary.isCherenkovGenerated ? `${summary.cherenkovAngleDeg.toFixed(2)}°` : "—"} />
         <Stat label="Photons per particle" value={summary.photonsPerParticle.toLocaleString()} />
-        <Stat label="SNR (S/√(S+B))" value={`${summary.signalToNoiseRatioDb.toFixed(1)} dB`} />
+        <Stat label="SNR (S/√(S+B))" value={`${summary.signalToNoiseRatio.toFixed(2)}`} />
       </div>
       <p className="text-[10px] text-slate-500 mt-4">
         Analytic Frank-Tamm model with constant beta along the emission length. Energy loss is not yet modelled, so

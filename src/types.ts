@@ -85,7 +85,7 @@ export interface SimulationSummary {
   photonsPerParticle: number;
   peakWavelengthNm: number;
   // 10*log10(S / sqrt(S + B)), S = detected photons per run, B = dark counts per run. 0 when no signal.
-  signalToNoiseRatioDb: number;
+  signalToNoiseRatio: number; // S / sqrt(S + B): detected photons per run over sqrt(photons + dark counts per run)
   cherenkovThresholdEnergyMeV: number; // at the 500 nm reference index
   cherenkovThresholdBandMeV: [number, number]; // lowest and highest threshold over the spectral range (dispersion)
   firedParticles: number;

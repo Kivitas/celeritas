@@ -187,15 +187,15 @@ export default function App() {
         activeIsotopePreset,
         detector,
       );
-      if (summary.signalToNoiseRatioDb > bestSnr) {
-        bestSnr = summary.signalToNoiseRatioDb;
+      if (summary.signalToNoiseRatio > bestSnr) {
+        bestSnr = summary.signalToNoiseRatio;
         bestThickness = t;
       }
     }
-    const previousSnr = simResult.summary.signalToNoiseRatioDb;
+    const previousSnr = simResult.summary.signalToNoiseRatio;
     setParams((prev) => ({ ...prev, radiatorThicknessMm: bestThickness }));
     setAssistantLogs(
-      `Thickness optimised to ${bestThickness} mm: SNR ${bestSnr.toFixed(2)} dB (was ${previousSnr.toFixed(2)} dB). Optimisation scans radiator thickness only; it does not change other settings.`
+      `Thickness optimised to ${bestThickness} mm: S/√(S+B) ${bestSnr.toFixed(2)} (was ${previousSnr.toFixed(2)}). Optimisation scans radiator thickness only; it does not change other settings.`
     );
   };
 
@@ -480,7 +480,7 @@ export default function App() {
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/60" />
                     <span className="text-[9px] uppercase tracking-widest text-slate-500 font-mono">SNR</span>
                   </div>
-                  <div className="text-lg font-bold font-mono text-emerald-400">{simResult.summary.signalToNoiseRatioDb.toFixed(1)} dB</div>
+                  <div className="text-lg font-bold font-mono text-emerald-400">{simResult.summary.signalToNoiseRatio.toFixed(2)}</div>
                 </div>
               </div>
             </div>

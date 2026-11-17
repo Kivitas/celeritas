@@ -242,7 +242,7 @@ export function runCherenkovSimulation(
     const frameRate = Math.max(1, detector.frameRateHz || 0);
     darkCountsPerRun = (darkRate / frameRate) * firedParticles;
   }
-  const snrDb = signalToNoiseDb(totalPhotonsDetected, darkCountsPerRun);
+  const snrDb = signalToNoiseRatioValue(totalPhotonsDetected, darkCountsPerRun);
 
   // Fluence at the detector face (photons per mm^2) over the beam spot
   const spotAreaMm2 = Math.PI * Math.pow((params.beamFwhmUm || 200.0) / 2000.0, 2);
@@ -254,29 +254,29 @@ export function runCherenkovSimulation(
       beta,
       betaThreshold: 1.0 / minN,
       isCherenkovGenerated: generatesCherenkov,
-      cherenkovAngleDeg: Number(avgCherenkovAngle.toFixed(2)),
-      cherenkovAngleSpreadDeg: Number(chromaticSpreadDeg.toFixed(3)),
-      totalPhotonsEmitted: Number(totalPhotonsEmitted.toFixed(1)),
-      totalPhotonsDetected: Number(totalPhotonsDetected.toFixed(1)),
-      photonsPerParticle: Number(perParticleEmitted.toFixed(3)),
+      cherenkovAngleDeg: avgCherenkovAngle,
+      cherenkovAngleSpreadDeg: chromaticSpreadDeg,
+      totalPhotonsEmitted: totalPhotonsEmitted,
+      totalPhotonsDetected: totalPhotonsDetected,
+      photonsPerParticle: perParticleEmitted,
       peakWavelengthNm: maxWavelength,
-      signalToNoiseRatioDb: snrDb,
-      cherenkovThresholdEnergyMeV: Number(cherenkovThreshEnergy.toFixed(3)),
-      cherenkovThresholdBandMeV: [Number(thresholdBand[0].toFixed(4)), Number(thresholdBand[1].toFixed(4))],
-      fluencePhotonsPerMm2: Number(fluence.toFixed(2)),
+      signalToNoiseRatio: snrDb,
+      cherenkovThresholdEnergyMeV: cherenkovThreshEnergy,
+      cherenkovThresholdBandMeV: [thresholdBand[0], thresholdBand[1]],
+      fluencePhotonsPerMm2: fluence,
       firedParticles,
       energyLossModelled: lossModelled,
-      kineticAtExitMeV: Number(kineticAtExitMeV.toFixed(4)),
+      kineticAtExitMeV: kineticAtExitMeV,
     },
   };
 }
 
 /**
- * SNR = S / sqrt(S + B) in dB, where S is detected signal photons per run and B is dark counts per run.
- * Returns 0 dB when there is no signal.
+ * Signal-to-noise ratio S / sqrt(S + B), where S is detected signal photons per run and B is dark counts per run.
+ * Returns 0 when there is no signal.
  */
-function signalToNoiseDb(signalPhotons: number, darkCounts: number): number {
+function signalToNoiseRatioValue(signalPhotons: number, darkCounts: number): number {
   if (!(signalPhotons > 0)) return 0;
-  const snr = Math.max(1e-6, signalPhotons / Math.sqrt(signalPhotons + Math.max(0, darkCounts)));
-  return Number((10.0 * Math.log10(snr)).toFixed(1));
+  const snr = signalPhotons / Math.sqrt(signalPhotons + Math.max(0, darkCounts));
+  return snr;
 }

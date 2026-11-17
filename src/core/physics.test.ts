@@ -264,7 +264,7 @@ describe('runCherenkovSimulation', () => {
   it('reports 0 dB SNR when no photons are detected', () => {
     const { summary } = runCherenkovSimulation(makeParams({ componentsActive: { primaryCherenkov: false, secondaryCherenkov: false } as SimulationParams['componentsActive'] }), heavyWater, sr90);
     expect(summary.totalPhotonsDetected).toBe(0);
-    expect(summary.signalToNoiseRatioDb).toBe(0);
+    expect(summary.signalToNoiseRatio).toBe(0);
   });
 
 });

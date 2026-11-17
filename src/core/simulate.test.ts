@@ -50,3 +50,14 @@ describe("spectral integration with constant index (plan T3.3)", () => {
     expect(summary.cherenkovAngleSpreadDeg).toBe(0);
   });
 });
+
+describe("outputs are not rounded inside the core (plan T3.6)", () => {
+  it("photonsPerParticle equals the unrounded sum of the spectrum", () => {
+    const material = constantIndex(1.4);
+    const { spectra, summary } = runCherenkovSimulation(
+      baseParams({ binResolutionNm: 10, trackLengthMm: 10, radiatorThicknessMm: 10 }), material, undefined
+    );
+    const sum = spectra.reduce((s, p) => s + p.primaryCherenkov, 0);
+    expect(summary.photonsPerParticle).toBeCloseTo(sum, 12);
+  });
+});
