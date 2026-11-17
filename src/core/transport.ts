@@ -45,6 +45,31 @@ export function getMediumCoefficients(wavelengthNm: number, materialId: string):
   return { mu_a, mu_s };
 }
 
+import type { AbsorptionPoint } from "../types";
+
+/**
+ * Absorption coefficient in mm^-1 from a tabulated, sourced spectrum (plan T2.3).
+ * Log-linear interpolation in alpha between table points sorted by wavelength. Outside the table the
+ * nearest endpoint is used; the table's range is documented on the material. Returns undefined when
+ * the table is empty.
+ */
+export function tabulatedAbsorptionPerMm(wavelengthNm: number, table: AbsorptionPoint[]): number | undefined {
+  if (table.length === 0) return undefined;
+  if (wavelengthNm <= table[0].wavelengthNm) return table[0].alphaPerM / 1000;
+  const last = table[table.length - 1];
+  if (wavelengthNm >= last.wavelengthNm) return last.alphaPerM / 1000;
+  for (let i = 1; i < table.length; i++) {
+    const hi = table[i];
+    if (wavelengthNm <= hi.wavelengthNm) {
+      const lo = table[i - 1];
+      const f = (wavelengthNm - lo.wavelengthNm) / (hi.wavelengthNm - lo.wavelengthNm);
+      const logAlpha = Math.log(lo.alphaPerM) + f * (Math.log(hi.alphaPerM) - Math.log(lo.alphaPerM));
+      return Math.exp(logAlpha) / 1000;
+    }
+  }
+  return last.alphaPerM / 1000;
+}
+
 /**
  * Effective attenuation coefficient from isotropic diffusion theory:
  * mu_eff = sqrt(3 * mu_a * (mu_a + mu_s')), with mu_s' = mu_s * (1 - g).

@@ -14,6 +14,14 @@ export interface MaterialPreset {
   // Provenance (docs/IMPROVEMENT_PLAN.md T2.2). Materials without verified: true are hidden by default in the UI.
   verified?: boolean;
   source?: string;
+  // Sourced absorption spectrum (plan T2.3). When present it replaces the unsourced coefficients in transport.
+  absorptionTable?: AbsorptionPoint[];
+}
+
+export interface AbsorptionPoint {
+  wavelengthNm: number;
+  /** Absorption coefficient alpha in 1/m (Beer-Lambert: I = I0 exp(-alpha x)). Must be > 0. */
+  alphaPerM: number;
 }
 
 export interface IsotopeProfile {

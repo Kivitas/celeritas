@@ -28,7 +28,7 @@ import {
 import { calculateRelativisticBeta, oneMinusBetaFromEnergy, getCherenkovThresholdEnergy } from "./kinematics";
 import { sin2ThetaFromDelta, cherenkovAngleDeg } from "./cherenkov";
 import { getRefractiveIndexAt } from "./dispersion";
-import { getMediumCoefficients, calculateEffectiveAttenuation, pathAveragedTransmission } from "./transport";
+import { getMediumCoefficients, calculateEffectiveAttenuation, pathAveragedTransmission, tabulatedAbsorptionPerMm } from "./transport";
 
 /**
  * Mass in MeV/c^2 for the simulated particle.
@@ -140,8 +140,11 @@ export function runCherenkovSimulation(
     }
 
     // Optical transport: path-averaged transmission over the emission length
+    // A sourced absorption table gives Beer-Lambert attenuation of ballistic photons. Otherwise the
+    // unsourced diffusion-based approximation is used (plan T2.3).
+    const tabulatedMu = materialPreset.absorptionTable ? tabulatedAbsorptionPerMm(lambda, materialPreset.absorptionTable) : undefined;
     const coeff = getMediumCoefficients(lambda, materialPreset.id);
-    const mu_eff = calculateEffectiveAttenuation(coeff.mu_a, coeff.mu_s, g);
+    const mu_eff = tabulatedMu !== undefined ? tabulatedMu : calculateEffectiveAttenuation(coeff.mu_a, coeff.mu_s, g);
     const transmission = Math.min(1, Math.max(0, pathAveragedTransmission(mu_eff, emissionLengthMm, depthMm)));
 
     const detectedPerParticle = primaryYield * transmission * detectionFactor;
