@@ -18,8 +18,8 @@ import { BEAMLINE_PRESETS } from "./data/beamlinePresets";
 
 // Import modules (eager: always visible or small)
 import ConfigurationTab from "./components/ConfigurationTab";
-import DynamicPlots from "./components/DynamicPlots";
 import Sidebar from "./components/Sidebar";
+import ErrorBoundary from "./components/ErrorBoundary";
 import PhysicsDetailsPanel from "./components/PhysicsDetailsPanel";
 
 // Heavy tabs are loaded on demand to keep the initial bundle small
@@ -28,9 +28,9 @@ const RawBatchTab = lazy(() => import("./components/RawBatchTab"));
 const ExportsTab = lazy(() => import("./components/ExportsTab"));
 const ValidationTab = lazy(() => import("./components/ValidationTab"));
 const InstrumentsTab = lazy(() => import("./components/InstrumentsTab"));
+const DynamicPlots = lazy(() => import("./components/DynamicPlots"));
 const TheoryTab = lazy(() => import("./components/TheoryTab").then((m) => ({ default: m.TheoryTab })));
 import { motion, AnimatePresence } from "motion/react";
-import { generatePdfFromElement } from "./utils/pdfExport";
 
 // Import icons from lucide-react
 import {
@@ -157,6 +157,8 @@ export default function App() {
   const handleGenerateReport = async () => {
     setIsExportingPdf(true);
     try {
+      // Loaded on demand: jsPDF and html2canvas are large and only needed for export.
+      const { generatePdfFromElement } = await import("./utils/pdfExport");
       await generatePdfFromElement("report-export-area", `Cherenkov_Lab_Report_${Date.now()}.pdf`);
     } finally {
       setIsExportingPdf(false);
@@ -256,8 +258,9 @@ export default function App() {
         calculatedSummary: simResult.summary,
       });
       setAssistantLogs(text);
-    } catch (err: any) {
-      setAssistantLogs(`AI Solver Offline: ${err.message || "Network Timeout"}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "";
+      setAssistantLogs(`AI Solver Offline: ${message || "Network Timeout"}`);
     } finally {
       setIsAiLoading(false);
       if (!customPrompt) setAssistantQuery("");
@@ -387,6 +390,7 @@ export default function App() {
                 transition={{ duration: 0.25, ease: "easeOut" }}
                 className="w-full space-y-6"
               >
+                <ErrorBoundary name={activeTab}>
                 <Suspense fallback={TAB_FALLBACK}>
                 {activeTab === "configure" && (
                   <ConfigurationTab
@@ -446,13 +450,15 @@ export default function App() {
                 {(activeTab === "configure" || activeTab === "lab") && (
                   <>
                     {/* Synchronized diagnostic plots occupant */}
-                    <DynamicPlots
-                      spectra={simResult.spectra}
-                      summary={simResult.summary}
-                      detector={detector}
-                      beamEnergyMeV={params.beamEnergyMeV}
-                      isDarkMode={isDarkMode}
-                    />
+                    <Suspense fallback={<div className="text-xs opacity-60 p-4">Loading spectra…</div>}>
+                      <DynamicPlots
+                        spectra={simResult.spectra}
+                        summary={simResult.summary}
+                        detector={detector}
+                        beamEnergyMeV={params.beamEnergyMeV}
+                        isDarkMode={isDarkMode}
+                      />
+                    </Suspense>
 
                     {/* Physics Details Panel - Shows when all components enabled */}
                     <PhysicsDetailsPanel
@@ -464,6 +470,7 @@ export default function App() {
                   </>
                 )}
                 </Suspense>
+                </ErrorBoundary>
               </motion.div>
             </AnimatePresence>
           </section>

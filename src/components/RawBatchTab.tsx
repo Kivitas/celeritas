@@ -140,7 +140,7 @@ export default function RawBatchTab({ batchRows, setBatchRows, isDarkMode }: Raw
     setErrorMessage("");
   };
 
-  const handleCellEdit = (id: string, col: keyof BatchRow, val: any) => {
+  const handleCellEdit = (id: string, col: keyof BatchRow, val: string | number) => {
     setBatchRows((prev) =>
       prev.map((r) => {
         if (r.id === id) {

@@ -86,8 +86,8 @@ async function fetchWithTimeout(url: string, init: RequestInit): Promise<Respons
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
     return await fetch(url, { ...init, signal: controller.signal });
-  } catch (err: any) {
-    if (err?.name === 'AbortError') {
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === 'AbortError') {
       throw new Error(`Request timed out after ${REQUEST_TIMEOUT_MS / 1000} seconds`);
     }
     throw err;
@@ -96,7 +96,7 @@ async function fetchWithTimeout(url: string, init: RequestInit): Promise<Respons
   }
 }
 
-export async function sendAIMessage(providerId: string, apiKey: string, prompt: string, context: any): Promise<string> {
+export async function sendAIMessage(providerId: string, apiKey: string, prompt: string, context: unknown): Promise<string> {
   const provider = AI_PROVIDERS.find((p) => p.id === providerId);
   if (!provider) throw new Error(`Unknown provider: ${providerId}`);
 
