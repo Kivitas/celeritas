@@ -63,7 +63,7 @@ const DEFAULT_PARAMS: SimulationParams = {
   trackLengthMm: 10,
   numberFiredParticles: 100,
   chamberTemperatureK: 293.15,
-  materialId: "heavy_water",
+  materialId: "quartz",
   radiatorThicknessMm: 15,
   spectralRangeStartNm: 300,
   spectralRangeEndNm: 800,

@@ -11,6 +11,9 @@ export interface MaterialPreset {
   mu_a_base: number; // UNUSED: not read by the engine (see plan T2.2)
   mu_s_base: number; // UNUSED: not read by the engine (see plan T2.2)
   anisotropyG: number; // Henyey-Greenstein g factor
+  // Provenance (docs/IMPROVEMENT_PLAN.md T2.2). Materials without verified: true are hidden by default in the UI.
+  verified?: boolean;
+  source?: string;
 }
 
 export interface IsotopeProfile {

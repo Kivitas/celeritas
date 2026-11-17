@@ -1503,6 +1503,8 @@ export const MATERIAL_PRESETS: MaterialPreset[] = [
     mu_a_base: 1e-6,
     mu_s_base: 0.0002,
     anisotropyG: 0.999,
+    verified: true,
+    source: "Malitson, J. Opt. Soc. Am. 55, 1205 (1965), three-term Sellmeier; reproduces n(589.3 nm) = 1.458403 (see physics.test.ts)",
   },
   {
     id: "lyso",

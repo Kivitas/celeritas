@@ -29,6 +29,7 @@ export default function ConfigurationTab({ params, setParams, detector, setDetec
   const [calcMass, setCalcMass] = useState<number>(0.51099895);
   const [calcEnergy, setCalcEnergy] = useState<number>(1.2);
   const [calcRefIndex, setCalcRefIndex] = useState<number>(1.333);
+  const [showUnverifiedMaterials, setShowUnverifiedMaterials] = useState<boolean>(false);
 
   const updateParam = <K extends keyof SimulationParams>(key: K, value: SimulationParams[K]) => {
     setParams((prev) => ({ ...prev, [key]: value }));
@@ -122,7 +123,18 @@ export default function ConfigurationTab({ params, setParams, detector, setDetec
         <h3 className="text-xs font-bold uppercase tracking-wider">Radiator</h3>
         <div>
           <label className={`text-[9px] uppercase font-bold block mb-1 ${label}`}>Material</label>
-          <SearchableSelect value={params.materialId} onChange={(id) => updateParam("materialId", id)} options={MATERIAL_PRESETS.map((m) => ({ id: m.id, name: m.name }))} placeholder="Search materials..." isDarkMode={isDarkMode} label="" />
+          <label className={`flex items-center gap-2 text-[10px] mb-2 ${label}`}>
+            <input type="checkbox" checked={showUnverifiedMaterials} onChange={(e) => setShowUnverifiedMaterials(e.target.checked)} />
+            Show unverified materials (refractive index and absorption not checked against a source)
+          </label>
+          <SearchableSelect
+            value={params.materialId}
+            onChange={(id) => updateParam("materialId", id)}
+            options={MATERIAL_PRESETS.filter((m) => showUnverifiedMaterials || m.verified || m.id === params.materialId).map((m) => ({ id: m.id, name: m.verified ? m.name : `${m.name} [unverified]` }))}
+            placeholder="Search materials..."
+            isDarkMode={isDarkMode}
+            label=""
+          />
         </div>
         <div className="grid grid-cols-2 gap-3">
           {numField("Thickness (mm)", params.radiatorThicknessMm, (v) => updateParam("radiatorThicknessMm", v))}
