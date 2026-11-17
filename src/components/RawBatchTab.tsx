@@ -6,7 +6,7 @@
 import React, { useState } from "react";
 import { BatchRow } from "../types";
 import { Upload, Download, Plus, Trash2, Play, Table, AlertCircle, FileSpreadsheet } from "lucide-react";
-import { frankTammPhotonsPerMm } from "../core/physics";
+import { frankTammPhotonsPerMm, calculateRelativisticBeta, ELECTRON_MASS_MEV, MUON_MASS_MEV, PROTON_MASS_MEV } from "../core/physics";
 
 interface RawBatchTabProps {
   batchRows: BatchRow[];
@@ -54,17 +54,21 @@ export default function RawBatchTab({ batchRows, setBatchRows, isDarkMode }: Raw
 
   // Quick physical presets loader
   const loadPhysicalTemplate = () => {
+    // Example inputs only. beta is derived from kinetic energy and rest mass, so it cannot disagree
+    // with the energy column. Yields are Frank-Tamm values without optical transport.
+    const example = (id: string, sampleName: string, massMeV: number, energyMeV: number, refractiveIndex: number, radiatorThicknessMm: number): BatchRow => ({
+      id, sampleName, energyMeV, refractiveIndex, radiatorThicknessMm,
+      beta: calculateRelativisticBeta(energyMeV, massMeV),
+    });
     const template: BatchRow[] = [
-      { id: "1", sampleName: "Heavy Water Core (D2O) [Sr-90 beta]", beta: 0.8860, refractiveIndex: 1.328, energyMeV: 0.546, radiatorThicknessMm: 15.0 },
-      { id: "2", sampleName: "Lead Glass Block (SF5) [Co-60 beta]", beta: 0.9450, refractiveIndex: 1.673, energyMeV: 0.963, radiatorThicknessMm: 25.0 },
-      { id: "3", sampleName: "Liquid Argon Cryo [Cosmic Muon]", beta: 0.9998, refractiveIndex: 1.233, energyMeV: 4000.0, radiatorThicknessMm: 120.0 },
-      { id: "4", sampleName: "Fused Silica Window [Synchrotron e-]", beta: 0.9999, refractiveIndex: 1.458, energyMeV: 6.0, radiatorThicknessMm: 2.0 },
-      { id: "5", sampleName: "Silica Aerogel Block [SPS Proton]", beta: 0.7420, refractiveIndex: 1.050, energyMeV: 450.0, radiatorThicknessMm: 10.0 },
-      { id: "6", sampleName: "BGO Scintillator Crystal [PET Gamma]", beta: 0.9120, refractiveIndex: 2.150, energyMeV: 0.511, radiatorThicknessMm: 30.0 },
-      { id: "7", sampleName: "Liquid Xenon (LXe) [Dark Matter WIMP]", beta: 0.6500, refractiveIndex: 1.690, energyMeV: 0.050, radiatorThicknessMm: 200.0 },
-      { id: "8", sampleName: "Sapphire Window (Al2O3) [Linac beam reference]", beta: 0.9850, refractiveIndex: 1.770, energyMeV: 15.0, radiatorThicknessMm: 5.0 },
-      { id: "9", sampleName: "Polystyrene Plastic (EJ-212) [Fast Neutron]", beta: 0.8500, refractiveIndex: 1.580, energyMeV: 2.0, radiatorThicknessMm: 50.0 },
-      { id: "10", sampleName: "Water (H2O) [Super-Kamiokande Neutrino]", beta: 0.9990, refractiveIndex: 1.333, energyMeV: 1000.0, radiatorThicknessMm: 1000.0 },
+      example("1", "Heavy water [Sr-90 electron, 0.546 MeV]", ELECTRON_MASS_MEV, 0.546, 1.328, 15.0),
+      example("2", "Lead glass [Co-60 electron, 0.963 MeV]", ELECTRON_MASS_MEV, 0.963, 1.673, 25.0),
+      example("3", "Liquid argon [muon, 4 GeV]", MUON_MASS_MEV, 4000.0, 1.233, 120.0),
+      example("4", "Fused silica [electron, 6 MeV]", ELECTRON_MASS_MEV, 6.0, 1.458, 2.0),
+      example("5", "Aerogel [proton, 450 MeV]", PROTON_MASS_MEV, 450.0, 1.05, 10.0),
+      example("6", "Water [electron, 1 GeV]", ELECTRON_MASS_MEV, 1000.0, 1.333, 1000.0),
+      example("7", "Sapphire [electron, 15 MeV]", ELECTRON_MASS_MEV, 15.0, 1.77, 5.0),
+      example("8", "Plastic [proton, 2 MeV]", PROTON_MASS_MEV, 2.0, 1.58, 50.0),
     ];
     setBatchRows(template);
     setErrorMessage("");

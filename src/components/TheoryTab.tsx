@@ -90,6 +90,7 @@ export const TheoryTab: React.FC = () => {
               </div>
               <p className="text-slate-400 mb-4 text-sm min-h-[40px]">
                 {formula.description}
+                <p className="text-[10px] opacity-60 mt-1 font-mono">Reference: {formula.reference}</p>
               </p>
               <div className="bg-slate-900/50 p-4 rounded-lg overflow-x-auto text-slate-300 mb-4 flex flex-col items-center justify-center min-h-[80px]">
                 {formula.equations.map((eq, i) => (
