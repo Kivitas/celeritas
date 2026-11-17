@@ -54,7 +54,8 @@ The app includes an optional AI assistant (OpenAI, Anthropic, Google Gemini, Mis
 ├── .github/workflows/deploy.yml   # CI: typecheck, test, build, deploy to GitHub Pages
 ├── public/                        # Static files copied as-is (_headers, _redirects, manifest, robots)
 ├── src/
-│   ├── core/                      # Physics engine (physics.ts) and AI provider client (ai.ts)
+│   ├── core/                      # Physics engine (physics.ts); pure functions, no browser APIs
+│   ├── services/                  # Browser AI provider client (ai.ts)
 │   ├── components/                # React UI: tabs, sidebar, 3D lab scene, plots, exports
 │   ├── data/                      # Presets, formulas and reference data
 │   ├── utils/                     # PDF export helpers

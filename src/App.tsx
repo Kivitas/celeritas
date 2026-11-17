@@ -11,7 +11,7 @@ import {
   ELECTRON_MASS_MEV,
   MUON_MASS_MEV,
 } from "./core/physics";
-import { sendAIMessage, loadApiKeys, saveApiKeys, getActiveProvider, AI_PROVIDERS } from "./core/ai";
+import { sendAIMessage, loadApiKeys, saveApiKeys, getActiveProvider, AI_PROVIDERS } from "./services/ai";
 import { MATERIAL_PRESETS, ISOTOPE_PRESETS } from "./data/presets";
 import { BEAMLINE_PRESETS } from "./data/beamlinePresets";
 
