@@ -11,6 +11,7 @@ import {
   ELECTRON_MASS_MEV,
   MUON_MASS_MEV,
 } from "./core/physics";
+import { validateRunConfig, configToEngine, type RunConfig } from "./core/runConfig";
 import { sendAIMessage, loadApiKeys, saveApiKeys, getActiveProvider, AI_PROVIDERS } from "./services/ai";
 import { MATERIAL_PRESETS, ISOTOPE_PRESETS } from "./data/presets";
 import { BEAMLINE_PRESETS } from "./data/beamlinePresets";
@@ -200,6 +201,24 @@ export default function App() {
   };
 
   // Trigger quick setups from fast physical triggers (data lives in data/beamlinePresets.ts)
+  // Validates a run configuration file, then applies it. Returns an error message, or null on success.
+  const importRunConfig = (jsonText: string): string | null => {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(jsonText);
+    } catch (err) {
+      return "Not valid JSON: " + (err as Error).message;
+    }
+    const problems = validateRunConfig(parsed);
+    if (problems.length > 0) {
+      return "Rejected: " + problems.map((p) => `${p.field}: ${p.message}`).join("; ");
+    }
+    const engine = configToEngine(parsed as RunConfig);
+    setParams((prev) => ({ ...prev, ...engine.params }));
+    setDetector(engine.detector);
+    return null;
+  };
+
   const loadPresetSetup = (presetId: string) => {
     const preset = BEAMLINE_PRESETS.find((p) => p.id === presetId);
     if (!preset) return;
@@ -393,6 +412,7 @@ export default function App() {
                     params={params}
                     detector={detector}
                     onGenerateReport={handleGenerateReport}
+                    onImportConfig={importRunConfig}
                     isDarkMode={isDarkMode}
                   />
                 )}

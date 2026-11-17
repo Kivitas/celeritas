@@ -3,20 +3,23 @@
  * SPDX-License-Identifier: MIT
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { SimulationParams, DetectorSettings } from "../types";
 import { FileJson, FileText, Download, CheckCircle } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+import { toRunConfig } from "../core/runConfig";
 
 interface ExportsTabProps {
   params: SimulationParams;
   detector: DetectorSettings;
   onGenerateReport: () => void;
+  onImportConfig?: (jsonText: string) => string | null;
   isDarkMode: boolean;
 }
 
-export default function ExportsTab({ params, detector, onGenerateReport, isDarkMode }: ExportsTabProps) {
+export default function ExportsTab({ params, detector, onGenerateReport, onImportConfig, isDarkMode }: ExportsTabProps) {
+  const [importMessage, setImportMessage] = useState<string | null>(null);
   // Theme support classes
   const cardBg = isDarkMode ? "bg-slate-900/90 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-850";
   const textTitle = isDarkMode ? "text-slate-100" : "text-slate-800";
@@ -67,6 +70,25 @@ export default function ExportsTab({ params, detector, onGenerateReport, isDarkM
             </p>
 
             <div className="space-y-2.5">
+              {onImportConfig && (
+                <label className={`w-full py-2 font-semibold text-xs rounded-lg flex items-center justify-center space-x-2 cursor-pointer transition ${isDarkMode ? "bg-slate-950 hover:bg-slate-850 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-800"}`}>
+                  <span>Load run configuration (JSON)</span>
+                  <input
+                    type="file"
+                    accept="application/json,.json"
+                    className="hidden"
+                    onChange={(ev) => {
+                      const file = ev.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = () => setImportMessage(onImportConfig(String(reader.result)) ?? "Loaded.");
+                      reader.readAsText(file);
+                      ev.target.value = "";
+                    }}
+                  />
+                </label>
+              )}
+              {importMessage && <p className="text-[10px] font-mono opacity-80">{importMessage}</p>}
               <button
                 onClick={onGenerateReport}
                 className="w-full py-2 bg-orange-600 hover:bg-orange-550 border border-orange-700 font-bold text-xs text-white rounded-lg flex items-center justify-center space-x-2 cursor-pointer transition shadow shadow-orange-500/10"
@@ -77,7 +99,7 @@ export default function ExportsTab({ params, detector, onGenerateReport, isDarkM
               
               <button
                 onClick={() => {
-                  const stateString = JSON.stringify({ params, detector }, null, 2);
+                  const stateString = JSON.stringify(toRunConfig(params, detector, "session"), null, 2);
                   const blob = new Blob([stateString], { type: "application/json" });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
