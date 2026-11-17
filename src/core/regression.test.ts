@@ -1,6 +1,6 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  */
 
 // Regression snapshot, NOT validation. It records what the engine currently returns so that any
