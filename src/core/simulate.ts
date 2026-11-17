@@ -29,6 +29,7 @@ import { calculateRelativisticBeta, oneMinusBetaFromEnergy, getCherenkovThreshol
 import { sin2ThetaFromDelta, cherenkovAngleDeg } from "./cherenkov";
 import { getRefractiveIndexAt } from "./dispersion";
 import { getMediumCoefficients, calculateEffectiveAttenuation, pathAveragedTransmission, tabulatedAbsorptionPerMm } from "./transport";
+import { sampleEnergyLossPath } from "./stopping";
 
 /**
  * Mass in MeV/c^2 for the simulated particle.
@@ -110,8 +111,9 @@ export function runCherenkovSimulation(
   }
 
   let generatesCherenkov = false;
-  let sumAngles = 0;
-  let countAngles = 0;
+  let sumW = 0;
+  let sumWTheta = 0;
+  let sumWTheta2 = 0;
 
   // Charge scaling: Frank-Tamm yield scales with Z^2
   let zVal = params.beamCharge !== undefined ? params.beamCharge : 1;
@@ -124,30 +126,70 @@ export function runCherenkovSimulation(
   // Honour the user toggle for the primary Frank-Tamm channel (the only remaining channel).
   const primaryOn = params.componentsActive?.primaryCherenkov !== false;
 
+  // Energy loss along the emission length, when the material has stopping-power data (plan T3.4).
+  // Otherwise the particle is treated as keeping its initial speed, as before.
+  const lossPath = materialPreset.stopping && primaryOn
+    ? sampleEnergyLossPath(E_beam, massMeV, materialPreset.stopping, emissionLengthMm)
+    : null;
+  const pathSamples = lossPath ? lossPath.samples : null;
+  const lossModelled = pathSamples !== null;
+  const kineticAtExitMeV = lossPath ? lossPath.exitKineticMeV : E_beam;
+
   for (let i = 0; i < nPoints; i++) {
     const lambda = start + i * binWidth;
     const n = getRefractiveIndexAt(lambda, materialPreset, chamberTemp);
 
     // Frank-Tamm differential yield per particle, integrated over one bin:
     // d^2N/(dx dlambda) = (2 pi alpha / lambda^2) sin^2(theta_c) Z^2
-    const sin2 = sin2ThetaFromDelta(delta, n);
-    let primaryYield = 0;
-    if (sin2 > 0 && primaryOn) {
-      generatesCherenkov = true;
-      const lambdaMeters = lambda * 1e-9;
-      const binMeters = binWidth * 1e-9;
-      primaryYield = (2.0 * Math.PI * FINE_STRUCTURE_CONSTANT * dxMeters) / (lambdaMeters * lambdaMeters) * sin2 * binMeters * zSq;
-    }
-
-    // Optical transport: path-averaged transmission over the emission length
-    // A sourced absorption table gives Beer-Lambert attenuation of ballistic photons. Otherwise the
-    // unsourced diffusion-based approximation is used (plan T2.3).
+    // The bin is integrated exactly over [lambda - w/2, lambda + w/2] with n held at the bin centre:
+    // integral of dlambda / lambda^2 = 1/lambda_lo - 1/lambda_hi. This converges to the analytic
+    // Frank-Tamm integral as the bins narrow (see the constant-index test in simulate.test.ts).
+    // Optical transport: a sourced absorption table gives Beer-Lambert attenuation of ballistic photons.
+    // Otherwise the unsourced diffusion-based approximation is used (plan T2.3).
     const tabulatedMu = materialPreset.absorptionTable ? tabulatedAbsorptionPerMm(lambda, materialPreset.absorptionTable) : undefined;
     const coeff = getMediumCoefficients(lambda, materialPreset.id);
     const mu_eff = tabulatedMu !== undefined ? tabulatedMu : calculateEffectiveAttenuation(coeff.mu_a, coeff.mu_s, g);
-    const transmission = Math.min(1, Math.max(0, pathAveragedTransmission(mu_eff, emissionLengthMm, depthMm)));
 
-    const detectedPerParticle = primaryYield * transmission * detectionFactor;
+    // Frank-Tamm integral over the bin, n at the bin centre (see the comment above).
+    const halfBin = binWidth / 2;
+    const loNm = lambda - halfBin > 0 ? lambda - halfBin : lambda;
+    const hiNm = lambda + halfBin;
+    const invLambdaDiffPerMeter = 1 / (loNm * 1e-9) - 1 / (hiNm * 1e-9);
+    const prefactor = 2.0 * Math.PI * FINE_STRUCTURE_CONSTANT * invLambdaDiffPerMeter * zSq;
+
+    let primaryYield = 0;
+    let transmission = 1;
+    let detectedPerParticle = 0;
+    if (pathSamples) {
+      // Energy-loss branch: each step emits with sin^2 at its own speed and is attenuated from its
+      // emission point to the exit face. Weights are path length times sin^2.
+      let wYield = 0;
+      let wYieldT = 0;
+      for (const sample of pathSamples) {
+        const s2 = sin2ThetaFromDelta(oneMinusBetaFromEnergy(sample.kineticMeV, massMeV), n);
+        if (s2 <= 0) continue;
+        const w = (sample.dxMm / 1000) * s2;
+        wYield += w;
+        wYieldT += w * Math.exp(-mu_eff * (depthMm - sample.xMm));
+      }
+      if (wYield > 0) {
+        generatesCherenkov = true;
+        primaryYield = prefactor * wYield;
+        transmission = wYieldT / wYield;
+        detectedPerParticle = prefactor * wYieldT * detectionFactor;
+      } else {
+        transmission = 0;
+      }
+    } else {
+      // Constant-speed branch (no stopping data for this material).
+      const sin2 = sin2ThetaFromDelta(delta, n);
+      if (sin2 > 0 && primaryOn) {
+        generatesCherenkov = true;
+        primaryYield = prefactor * dxMeters * sin2;
+      }
+      transmission = Math.min(1, Math.max(0, pathAveragedTransmission(mu_eff, emissionLengthMm, depthMm)));
+      detectedPerParticle = primaryYield * transmission * detectionFactor;
+    }
 
     if (detectedPerParticle > maxWavelengthYield) {
       maxWavelengthYield = detectedPerParticle;
@@ -157,10 +199,13 @@ export function runCherenkovSimulation(
     perParticleEmitted += primaryYield;
     perParticleDetected += detectedPerParticle;
 
+    // Photon-weighted angle statistics: each bin contributes its emitted yield as weight.
     const betaN = beta * n;
-    if (betaN > 1) {
-      sumAngles += cherenkovAngleDeg(beta, n);
-      countAngles++;
+    if (betaN > 1 && primaryYield > 0) {
+      const theta = cherenkovAngleDeg(beta, n);
+      sumW += primaryYield;
+      sumWTheta += primaryYield * theta;
+      sumWTheta2 += primaryYield * theta * theta;
     }
 
     points.push({
@@ -171,7 +216,9 @@ export function runCherenkovSimulation(
     });
   }
 
-  const avgCherenkovAngle = countAngles === 0 ? 0 : sumAngles / countAngles;
+  const avgCherenkovAngle = sumW > 0 ? sumWTheta / sumW : 0;
+  // Chromatic spread: yield-weighted standard deviation of the emission angle over the spectrum.
+  const chromaticSpreadDeg = sumW > 0 ? Math.sqrt(Math.max(0, sumWTheta2 / sumW - avgCherenkovAngle * avgCherenkovAngle)) : 0;
 
   // Per-run totals
   const totalPhotonsEmitted = perParticleEmitted * firedParticles;
@@ -180,6 +227,13 @@ export function runCherenkovSimulation(
   // Threshold uses the material index at the reference wavelength and chamber temperature
   const minN = getRefractiveIndexAt(THRESHOLD_REFERENCE_WAVELENGTH_NM, materialPreset, chamberTemp);
   const cherenkovThreshEnergy = getCherenkovThresholdEnergy(massMeV, minN);
+  // Threshold band over the spectral range: the largest index gives the lowest threshold.
+  const nStart = getRefractiveIndexAt(start, materialPreset, chamberTemp);
+  const nEnd = getRefractiveIndexAt(end, materialPreset, chamberTemp);
+  const thresholdBand = [
+    getCherenkovThresholdEnergy(massMeV, Math.max(nStart, nEnd)),
+    getCherenkovThresholdEnergy(massMeV, Math.min(nStart, nEnd)),
+  ];
 
   // Signal-to-noise: S / sqrt(S + B), with dark counts per frame scaled to the run
   let darkCountsPerRun = 0;
@@ -201,14 +255,18 @@ export function runCherenkovSimulation(
       betaThreshold: 1.0 / minN,
       isCherenkovGenerated: generatesCherenkov,
       cherenkovAngleDeg: Number(avgCherenkovAngle.toFixed(2)),
+      cherenkovAngleSpreadDeg: Number(chromaticSpreadDeg.toFixed(3)),
       totalPhotonsEmitted: Number(totalPhotonsEmitted.toFixed(1)),
       totalPhotonsDetected: Number(totalPhotonsDetected.toFixed(1)),
       photonsPerParticle: Number(perParticleEmitted.toFixed(3)),
       peakWavelengthNm: maxWavelength,
       signalToNoiseRatioDb: snrDb,
       cherenkovThresholdEnergyMeV: Number(cherenkovThreshEnergy.toFixed(3)),
+      cherenkovThresholdBandMeV: [Number(thresholdBand[0].toFixed(4)), Number(thresholdBand[1].toFixed(4))],
       fluencePhotonsPerMm2: Number(fluence.toFixed(2)),
       firedParticles,
+      energyLossModelled: lossModelled,
+      kineticAtExitMeV: Number(kineticAtExitMeV.toFixed(4)),
     },
   };
 }

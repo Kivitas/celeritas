@@ -16,6 +16,8 @@ export interface MaterialPreset {
   source?: string;
   // Sourced absorption spectrum (plan T2.3). When present it replaces the unsourced coefficients in transport.
   absorptionTable?: AbsorptionPoint[];
+  // Stopping-power data (plan T3.4). Present only where the density and I value are sourced.
+  stopping?: { zOverA: number; iMeV: number; densityGcm3: number };
 }
 
 export interface AbsorptionPoint {
@@ -74,7 +76,8 @@ export interface SimulationSummary {
   beta: number; // v/c
   betaThreshold: number; // 1/n at the reference wavelength
   isCherenkovGenerated: boolean;
-  cherenkovAngleDeg: number; // photon-count-unweighted mean over bins above threshold
+  cherenkovAngleDeg: number; // yield-weighted mean emission angle over the spectrum
+  cherenkovAngleSpreadDeg: number; // yield-weighted standard deviation of the angle (chromatic spread)
   // PER RUN (per-particle value * numberFiredParticles). Detected photons include detector QE and DAQ deadtime.
   totalPhotonsEmitted: number;
   totalPhotonsDetected: number;
@@ -83,8 +86,11 @@ export interface SimulationSummary {
   peakWavelengthNm: number;
   // 10*log10(S / sqrt(S + B)), S = detected photons per run, B = dark counts per run. 0 when no signal.
   signalToNoiseRatioDb: number;
-  cherenkovThresholdEnergyMeV: number;
+  cherenkovThresholdEnergyMeV: number; // at the 500 nm reference index
+  cherenkovThresholdBandMeV: [number, number]; // lowest and highest threshold over the spectral range (dispersion)
   firedParticles: number;
+  energyLossModelled: boolean; // true when the particle slows down along the emission length
+  kineticAtExitMeV: number; // kinetic energy at the end of the emission length (initial energy when no loss model)
   fluencePhotonsPerMm2: number; // detected photons per run over the beam spot area
 }
 

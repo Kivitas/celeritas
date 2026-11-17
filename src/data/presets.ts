@@ -1496,6 +1496,7 @@ export const MATERIAL_PRESETS: MaterialPreset[] = [
     anisotropyG: 0.999,
     verified: true,
     source: "https://refractiveindex.info/?shelf=main&book=H2O&page=Hale (Hale and Querry 1973, 25 C, k converted to alpha = 4 pi k / lambda); dispersion from Daimon and Masumura 2007. Absorption table covers 400-650 nm only; outside it the endpoint value is used, which is NOT sourced.",
+    stopping: { zOverA: 0.55509, iMeV: 0.0000750, densityGcm3: 1.000 }, // PDG 2026 water: Z/A, density; I = 75.0 eV as in NIST ESTAR (PDG gives 79.7 eV). No density effect.
     absorptionTable: [
       { wavelengthNm: 400, alphaPerM: 0.0584336 },
       { wavelengthNm: 425, alphaPerM: 0.0384383 },
