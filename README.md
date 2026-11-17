@@ -15,14 +15,20 @@ Celeritas is a React 19 + TypeScript + Vite dashboard for exploring Cherenkov ra
 
 ## Limitations
 
-- Only Frank-Tamm (primary) Cherenkov emission is modelled. Secondary Cherenkov, bremsstrahlung, fluorescence, Compton and transition-radiation channels are not included.
-- Energy loss along the track is not modelled: the particle is assumed to keep a constant speed over the emission length. This overestimates yields for particles that slow down in the radiator.
-- The transport model uses medium coefficients that are not yet sourced for most materials. Only the arithmetic consistency checks in the Validation tab exist; there is no comparison with external measurements yet.
-- Detector settings only apply quantum efficiency, dead time and a dark-count term to the signal-to-noise ratio (SNR).
-- The model does not perform Monte Carlo transport.
+Full list with sources: [docs/physics/MODEL.md](docs/physics/MODEL.md).
+
+- Only Frank-Tamm Cherenkov emission is modelled. Secondary Cherenkov, bremsstrahlung, fluorescence, Compton, transition radiation and synchrotron emission are not included.
+- Energy loss is modelled for water only (no density effect): electron stopping power is 4% high at 2 MeV and 13% high at 10 MeV.
+- Most materials have no sourced refractive index or absorption; they are hidden by default.
+- The Monte Carlo has no scattering, delta rays or exit-face optics yet.
+- Not validated against an independent code (no Geant4 cross-check).
 - Not for clinical, dosimetric or radiation-safety use.
 
-See docs/IMPROVEMENT_PLAN.md for the planned work.
+## Documentation
+
+- [Physics model](docs/physics/MODEL.md): equations, sources, validity, limitations
+- [Improvement plan](docs/IMPROVEMENT_PLAN.md): status of each phase
+- [Contributing](CONTRIBUTING.md) and [Changelog](CHANGELOG.md)
 
 ## Development
 
@@ -33,6 +39,9 @@ npm run typecheck   # tsc --noEmit
 npm test            # vitest run
 npm run build       # production build into dist/
 npm run preview     # serve the production build locally
+npm run validate    # compare the model with external references (writes validation/report.md)
+npm run cli:build   # build the headless runner; then: node dist-cli/cli.mjs config.json > result.json
+npm run e2e         # browser smoke test against the built app (needs Playwright)
 ```
 
 Node.js 20 or newer is recommended.
