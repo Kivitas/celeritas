@@ -134,8 +134,6 @@ export function runMonteCarlo(
         let b = 0;
         while (b < nBins - 1 && table.cum[b] < u) b++;
         // Sample a wavelength within the bin, with pdf proportional to 1/lambda^2.
-        const invLo = 1 / (binLo[b] * 1e-9);
-        const invHi = 1 / (binHi[b] * 1e-9);
         // The sampled wavelength is not yet used (no angular or detector-geometry model).
         rng.uniform();
         // Transport from the emission point (x) to the exit face, then detection.
