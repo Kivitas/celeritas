@@ -15,10 +15,14 @@ Celeritas is a React 19 + TypeScript + Vite dashboard for exploring Cherenkov ra
 
 ## Limitations
 
-- The bremsstrahlung, fluorescence, Compton and transition-radiation channels are heuristic.
+- Only Frank-Tamm (primary) Cherenkov emission is modelled. Secondary Cherenkov, bremsstrahlung, fluorescence, Compton and transition-radiation channels are not included.
+- Energy loss along the track is not modelled: the particle is assumed to keep a constant speed over the emission length. This overestimates yields for particles that slow down in the radiator.
+- The transport model uses medium coefficients that are not yet sourced for most materials. Only the arithmetic consistency checks in the Validation tab exist; there is no comparison with external measurements yet.
 - Detector settings only apply quantum efficiency, dead time and a dark-count term to the signal-to-noise ratio (SNR).
-- The model does not perform full Monte Carlo transport.
-- Not for clinical or dosimetry use.
+- The model does not perform Monte Carlo transport.
+- Not for clinical, dosimetric or radiation-safety use.
+
+See docs/IMPROVEMENT_PLAN.md for the planned work.
 
 ## Development
 
