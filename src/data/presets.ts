@@ -1488,12 +1488,14 @@ export const MATERIAL_PRESETS: MaterialPreset[] = [
   },
   {
     id: "water",
-    name: "Pure Liquid Water (H2O) [Standard Reference]",
-    refractiveIndexStatic: 1.333,
-    sellmeierCoeffs: { B1: 0.567, C1: 0.0051, B2: 0.208, C2: 0.0131 },
+    name: "Pure Liquid Water (H2O, 20 C) [Standard Reference]",
+    refractiveIndexStatic: 1.333349,
+    sellmeierCoeffs: { B1: 0.5684027565, C1: 0.005101829712, B2: 0.1726177391, C2: 0.01821153936, B3: 0.02086189578, C3: 0.02620722293, B4: 0.1130748688, C4: 10.69792721 }, // H2O Daimon and Masumura 2007, 20 C (formula 2, 4 terms); valid 0.18-1.13 um
     mu_a_base: 0.00001,
     mu_s_base: 0.001,
     anisotropyG: 0.999,
+    verified: true,
+    source: "https://refractiveindex.info/?shelf=main&book=H2O&page=Daimon-20.0C (H2O Daimon and Masumura 2007, 20 C (formula 2, 4 terms)); dispersion only, absorption not verified",
   },
   {
     id: "quartz",
@@ -1535,12 +1537,14 @@ export const MATERIAL_PRESETS: MaterialPreset[] = [
   },
   {
     id: "sapphire",
-    name: "Sapphire (Al2O3) [High-Temperature Window]",
-    refractiveIndexStatic: 1.77,
-    sellmeierCoeffs: { B1: 1.02, C1: 0.014, B2: 0.68, C2: 0.042 },
+    name: "Sapphire (Al2O3, ordinary ray) [High-Temperature Window]",
+    refractiveIndexStatic: 1.768138,
+    sellmeierCoeffs: { B1: 1.023798, C1: 0.0037758825122041003, B2: 1.058264, C2: 0.012254423580089999, B3: 5.280792, C3: 321.36155343359997 }, // Al2O3 ordinary ray, Malitson 1962 (formula 1); valid 0.2652-5.577 um
     mu_a_base: 0.0005,
     mu_s_base: 0.008,
     anisotropyG: 0.97,
+    verified: true,
+    source: "https://refractiveindex.info/?shelf=main&book=Al2O3&page=Malitson (Al2O3 ordinary ray, Malitson 1962 (formula 1)); dispersion only, absorption not verified",
   },
   {
     id: "diamond",
@@ -1589,12 +1593,14 @@ export const MATERIAL_PRESETS: MaterialPreset[] = [
   },
   {
     id: "glass_bk7",
-    name: "BK7 Optical Glass [Lens Material]",
-    refractiveIndexStatic: 1.517,
-    sellmeierCoeffs: { B1: 1.0396, C1: 0.006, B2: 0.2318, C2: 0.02 },
+    name: "N-BK7 Optical Glass (SCHOTT) [Lens Material]",
+    refractiveIndexStatic: 1.516728,
+    sellmeierCoeffs: { B1: 1.03961212, C1: 0.00600069867, B2: 0.231792344, C2: 0.0200179144, B3: 1.01046945, C3: 103.560653 }, // N-BK7 SCHOTT (formula 2, C in um^2); valid 0.3-2.5 um
     mu_a_base: 0.0005,
     mu_s_base: 0.003,
     anisotropyG: 0.99,
+    verified: true,
+    source: "https://refractiveindex.info/?shelf=specs&book=SCHOTT-optical&page=N-BK7 (N-BK7 SCHOTT (formula 2, C in um^2)); dispersion only, absorption not verified",
   },
   {
     id: "glass_sf10",
@@ -1635,20 +1641,24 @@ export const MATERIAL_PRESETS: MaterialPreset[] = [
   {
     id: "calcium_fluoride",
     name: "Calcium Fluoride (CaF2) [UV Window]",
-    refractiveIndexStatic: 1.434,
-    sellmeierCoeffs: { B1: 0.567, C1: 0.005, B2: 0.471, C2: 0.01 },
+    refractiveIndexStatic: 1.433808,
+    sellmeierCoeffs: { B1: 0.5675888, C1: 0.002526429987596025, B2: 0.4710914, C2: 0.010078332802810001, B3: 3.8484723, C3: 1200.5559729216 }, // CaF2 Malitson 1963 (formula 1); valid 0.23-9.7 um
     mu_a_base: 0.0002,
     mu_s_base: 0.005,
     anisotropyG: 0.98,
+    verified: true,
+    source: "https://refractiveindex.info/?shelf=main&book=CaF2&page=Malitson (CaF2 Malitson 1963 (formula 1)); dispersion only, absorption not verified",
   },
   {
     id: "magnesium_fluoride",
-    name: "Magnesium Fluoride (MgF2) [Deep UV]",
-    refractiveIndexStatic: 1.378,
-    sellmeierCoeffs: { B1: 0.487, C1: 0.0043, B2: 0.398, C2: 0.009 },
+    name: "Magnesium Fluoride (MgF2, ordinary ray) [Deep UV]",
+    refractiveIndexStatic: 1.377712,
+    sellmeierCoeffs: { B1: 0.48755108, C1: 0.0018821783974463998, B2: 0.39875031, C2: 0.008951888471936401, B3: 2.3120353, C3: 566.135591308816 }, // MgF2 ordinary ray, Dodge 1984 (formula 1); valid 0.2-7 um
     mu_a_base: 0.0001,
     mu_s_base: 0.004,
     anisotropyG: 0.99,
+    verified: true,
+    source: "https://refractiveindex.info/?shelf=main&book=MgF2&page=Dodge-o (MgF2 ordinary ray, Dodge 1984 (formula 1)); dispersion only, absorption not verified",
   },
   {
     id: "oil_immersion",
@@ -1671,11 +1681,13 @@ export const MATERIAL_PRESETS: MaterialPreset[] = [
   {
     id: "lithium_fluoride",
     name: "Lithium Fluoride (LiF) [UV Window]",
-    refractiveIndexStatic: 1.392,
-    sellmeierCoeffs: { B1: 0.489, C1: 0.0042, B2: 0.398, C2: 0.0095 },
+    refractiveIndexStatic: 1.392109,
+    sellmeierCoeffs: { B1: 0.92549, C1: 0.005440537600000001, B2: 6.96747, C2: 1075.1841 }, // LiF Li 1976 (formula 1, 2 terms); valid 0.1-11 um
     mu_a_base: 0.0003,
     mu_s_base: 0.006,
     anisotropyG: 0.98,
+    verified: true,
+    source: "https://refractiveindex.info/?shelf=main&book=LiF&page=Li (LiF Li 1976 (formula 1, 2 terms)); dispersion only, absorption not verified",
   },
   {
     id: "barium_fluoride",
