@@ -16,14 +16,6 @@ interface LabTabProps {
   isDarkMode: boolean;
 }
 
-// Neutral display labels for physics-generated fluence classes (display only).
-const neutralFluenceClass = (s: string) => s
-  .replace("Extremely Lethal Beam Zone (High Fluence)", "High-fluence zone")
-  .replace("High Radiation Field (Biohazard Control Required)", "High-fluence field (shielding review recommended)")
-  .replace("Controlled Active Beamline Area (Occupational Watch)", "Active beamline area (monitoring recommended)")
-  .replace("Radio-Safe / Research Minimal Influx", "Low-fluence reference")
-  .replace("Minimal Exposure / Research Grade", "Minimal fluence (reference)");
-
 const APPLICATION_LABELS: Record<string, string> = {
   imrt: "IMRT beam reference",
   proton_therapy_verify: "Proton range reference",
@@ -1431,17 +1423,6 @@ export default function LabTab({ params, detector, summary, isDarkMode }: LabTab
                 </button>
               </div>
 
-              {/* Radiation Safety alert status */}
-              <div className={`p-4 border rounded-xl flex items-start space-x-3 text-left ${isDarkMode ? "bg-slate-950 border-slate-850" : "bg-slate-50 border-slate-200"}`}>
-                <ShieldAlert className="w-5 h-5 text-orange-400 shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Fluence Reference Class</h4>
-                  <p className="text-[11px] font-sans text-slate-500 leading-snug mt-1 font-semibold text-orange-500 dark:text-orange-400">
-                    {neutralFluenceClass(summary.radSafetyClassification)}
-                  </p>
-                </div>
-              </div>
-              
               {/* Photon Fluence / Area Intensity report metrics */}
               <div className={`p-4 border rounded-xl ${isDarkMode ? "bg-slate-950 border-slate-850" : "bg-slate-50 border-slate-150"}`}>
                 <div className="flex justify-between items-center text-[10px] uppercase font-bold text-slate-400 mb-2 font-mono">
@@ -1469,8 +1450,6 @@ export default function LabTab({ params, detector, summary, isDarkMode }: LabTab
                       <span className="font-bold text-slate-100 uppercase text-[11px]">{APPLICATION_LABELS[params.experimentalApplication] ?? (params.experimentalApplication || "").replace("_", " ")}</span>
                     </div>
                     <div>
-                      <span className="block opacity-70">Fluence Accuracy Deviation:</span>
-                      <span className="font-bold text-green-400 text-[11px]">± {summary.experimentalFluencePercentError} %</span>
                     </div>
                   </div>
                   <p className="text-[10px] italic text-slate-500 mt-1">

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from "vitest";
 import {
   runCherenkovSimulation,
   getRefractiveIndexAt,
@@ -267,32 +267,77 @@ describe('runCherenkovSimulation', () => {
     expect(summary.signalToNoiseRatioDb).toBe(0);
   });
 
-  it('heuristic channels do not depend on intensityFlux', () => {
-    const heuristics = { bremsstrahlung: true, fluorescence: true };
-    const lowFlux = runCherenkovSimulation(
-      makeParams({ intensityFlux: 1e3, componentsActive: { ...makeParams().componentsActive, ...heuristics } as SimulationParams['componentsActive'] }),
-      heavyWater, sr90
-    );
-    const highFlux = runCherenkovSimulation(
-      makeParams({ intensityFlux: 1e6, componentsActive: { ...makeParams().componentsActive, ...heuristics } as SimulationParams['componentsActive'] }),
-      heavyWater, sr90
-    );
-    const relDiff = (a: number, b: number) => Math.abs(a - b) / Math.max(Math.abs(a), Math.abs(b), Number.MIN_VALUE);
+});
 
-    expect(relDiff(lowFlux.summary.photonsPerParticle, highFlux.summary.photonsPerParticle)).toBeLessThan(1e-9);
+import { sin2ThetaFromDelta, resolveParticleMassMeV, oneMinusBetaFromEnergy } from './physics';
+import { PARTICLES } from '../data/particles';
 
-    // Per-run totals with many particles so the 0.1-photon output rounding is negligible.
-    // Compare the per-particle emitted value, and confirm the heuristic channel contributes at all.
-    const bigRun = { numberFiredParticles: 1e6 };
-    const withHeuristics = (flux: number) => runCherenkovSimulation(
-      makeParams({ ...bigRun, intensityFlux: flux, componentsActive: { ...makeParams().componentsActive, ...heuristics } as SimulationParams['componentsActive'] }),
-      heavyWater, sr90
-    );
-    const withoutHeuristics = runCherenkovSimulation(makeParams(bigRun), heavyWater, sr90);
-    const lowPerParticle = withHeuristics(1e3).summary.totalPhotonsEmitted / 1e6;
-    const highPerParticle = withHeuristics(1e6).summary.totalPhotonsEmitted / 1e6;
-    const basePerParticle = withoutHeuristics.summary.totalPhotonsEmitted / 1e6;
-    expect(basePerParticle).toBeLessThan(lowPerParticle);
-    expect(relDiff(lowPerParticle, highPerParticle)).toBeLessThan(1e-9);
+describe('numerical precision (phase 3.2)', () => {
+  it('sin^2(theta) at zero delta reduces to 1 - 1/n^2 exactly', () => {
+    for (const n of [1.000298, 1.05, 1.328, 1.458, 2.15]) {
+      expect(sin2ThetaFromDelta(0, n)).toBeCloseTo(1 - 1 / (n * n), 14);
+    }
+  });
+
+  it('sin^2(theta) for a 1 TeV electron in N2 (eta = 2.98e-4) is 2 eta to 1e-6', () => {
+    // beta -> 1: sin^2 = 1 - 1/n^2 ~ 2 eta. delta ~ 1e-13 here, far below eta.
+    const eta = 2.98e-4;
+    const n = 1 + eta;
+    const delta = oneMinusBetaFromEnergy(1e6, PARTICLES[11].massMeV);
+    expect(delta).toBeLessThan(1e-12);
+    expect(Math.abs(sin2ThetaFromDelta(delta, n) - 2 * eta)).toBeLessThan(1e-6);
+  });
+
+  it('is positive exactly when beta * n > 1 (threshold consistency over a sweep)', () => {
+    const m = PARTICLES[11].massMeV;
+    for (const n of [1.0002, 1.05, 1.328]) {
+      for (let t = 0.05; t < 5; t += 0.07) {
+        const T = t * m * 10;
+        const beta = calculateRelativisticBeta(T, m);
+        const above = beta * n > 1;
+        expect(sin2ThetaFromDelta(oneMinusBetaFromEnergy(T, m), n) > 0).toBe(above);
+      }
+    }
+  });
+
+  it('beta is not clamped at high energy', () => {
+    const beta = calculateRelativisticBeta(1e6, ELECTRON_MASS_MEV);
+    expect(beta).toBeGreaterThan(0.9999999);
+    expect(beta).toBeLessThan(1);
+  });
+});
+
+describe('particle mass selection (phase 2.1)', () => {
+  const preset = (id: string) => ISOTOPE_PRESETS.find((i) => i.id === id);
+
+  it('uses the PDG electron mass for a beta source', () => {
+    expect(resolveParticleMassMeV(makeParams(), preset('sr90'))).toBe(PARTICLES[11].massMeV);
+  });
+
+  it('uses the muon mass for muon_cosmic, not for every custom preset', () => {
+    expect(resolveParticleMassMeV(makeParams(), preset('muon_cosmic'))).toBe(PARTICLES[13].massMeV);
+  });
+
+  it('uses the proton and charged pion masses by PDG id', () => {
+    expect(resolveParticleMassMeV(makeParams(), preset('proton_sps'))).toBe(PARTICLES[2212].massMeV);
+    expect(resolveParticleMassMeV(makeParams(), preset('pion_plus'))).toBe(PARTICLES[211].massMeV);
+  });
+
+  it('uses the user-supplied mass for a custom isotope', () => {
+    const p = makeParams({ isotopeId: 'custom', customRestMassMeV: 1234.5 });
+    expect(resolveParticleMassMeV(p, undefined)).toBe(1234.5);
+  });
+
+  it('does not silently fall back to the muon mass for a preset missing from the table', () => {
+    const fake = { id: 'x', name: 'x', type: 'custom', baseEnergyMeV: 1, fluxIntensity: 1, pdgId: 999999, polarization: 0 } as const;
+    expect(resolveParticleMassMeV(makeParams({ customRestMassMeV: 500 }), fake)).toBe(500);
+  });
+});
+
+describe('dispersion data', () => {
+  it('fused silica (Malitson 1965, three-term Sellmeier) gives n = 1.4584 at 589.3 nm, 20 C to 2e-4', () => {
+    // Reproduces the published fit; the coefficient transcription is what this guards against.
+    const quartzPreset = MATERIAL_PRESETS.find((m) => m.id === 'quartz')!;
+    expect(Math.abs(getRefractiveIndexAt(589.3, quartzPreset, 293.15) - 1.4584)).toBeLessThan(2e-4);
   });
 });

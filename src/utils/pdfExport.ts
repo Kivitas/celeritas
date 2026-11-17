@@ -158,20 +158,8 @@ export const generateScientificReportPdf = (summary: any, params: any, detector:
     addText(`* Estimated Integrated Photon Yield (N): ${Math.floor(Number(summary?.numberPhotonsEmitted || 0)).toLocaleString()} photons`, 11, false, [0,0,0], 5);
     
     addHeader("4. ENERGY LOSS MECHANISMS & DEPOSITED ENERGY");
-    addText("As the particle traverses the medium, it undergoes continuous energy loss primarily through inelastic collisions with atomic electrons (ionization and excitation) and bremsstrahlung.", 11);
+    addText("Energy loss along the track is NOT modelled in this version: the particle is assumed to keep a constant beta over the emission length. Energy-loss modelling is planned (docs/IMPROVEMENT_PLAN.md T3.4).", 11, true, [180, 83, 9]);
     y += 5;
-    const dEdx = Number(summary?.stoppingPower || 0);
-    addText(`* Total Stopping Power (dE/dx via Bethe-Bloch): ${dEdx > 0 ? dEdx.toExponential(4) : '0'} MeV/cm`, 11, true);
-    addText("This value incorporates density effect corrections at extreme relativistic limits (Fermi plateau) and shell corrections at lower energies.", 11, false, [50, 50, 50], 5);
-    y += 5;
-    addText("For research reference, the total energy deposited in the detector substrate and surrounding shielding is tracked for each simulated configuration.", 11);
-    const radClass = String(summary?.radSafetyClassification || "Reference")
-      .replace("Extremely Lethal Beam Zone (High Fluence)", "High-fluence zone")
-      .replace("High Radiation Field (Biohazard Control Required)", "High-fluence field (shielding review recommended)")
-      .replace("Controlled Active Beamline Area (Occupational Watch)", "Active beamline area (monitoring recommended)")
-      .replace("Radio-Safe / Research Minimal Influx", "Low-fluence reference")
-      .replace("Minimal Exposure / Research Grade", "Minimal fluence (reference)");
-    addText(`* Fluence Reference Class: ${radClass}`, 12, true, radClass.includes("WARNING") ? [220, 38, 38] : [22, 163, 74]);
     addText(`* Estimated Target Fluence: ${Number(summary?.fluencePhotonsPerMm2 || 0).toLocaleString()} photons/mm^2`, 11, false, [0,0,0], 5);
 
     addHeader("5. FUNDAMENTAL FORMULAS UTILIZED");

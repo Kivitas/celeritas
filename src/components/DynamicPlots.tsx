@@ -29,14 +29,6 @@ interface DynamicPlotsProps {
   isDarkMode: boolean;
 }
 
-// Neutral display labels for physics-generated fluence classes (display only).
-const neutralFluenceClass = (s: string) => s
-  .replace("Extremely Lethal Beam Zone (High Fluence)", "High-fluence zone")
-  .replace("High Radiation Field (Biohazard Control Required)", "High-fluence field (shielding review recommended)")
-  .replace("Controlled Active Beamline Area (Occupational Watch)", "Active beamline area (monitoring recommended)")
-  .replace("Radio-Safe / Research Minimal Influx", "Low-fluence reference")
-  .replace("Minimal Exposure / Research Grade", "Minimal fluence (reference)");
-
 export default React.memo(function DynamicPlots({ spectra, summary, detector, beamEnergyMeV, isDarkMode }: DynamicPlotsProps) {
   
   // Custom tooltip styling
@@ -143,10 +135,6 @@ export default React.memo(function DynamicPlots({ spectra, summary, detector, be
     return spectra.map((p) => ({
       wavelength: p.wavelengthNm,
       primary: Number(p.primaryCherenkov.toFixed(2)),
-      secondary: Number(p.secondaryCherenkov.toFixed(2)),
-      bremsstrahlung: Number(p.bremsstrahlung.toFixed(2)),
-      fluorescence: Number(p.fluorescence.toFixed(2)),
-      bg: Number(p.background.toFixed(2)),
       total: Number(p.totalYield.toFixed(2)),
     }));
   }, [spectra]);
@@ -395,7 +383,6 @@ export default React.memo(function DynamicPlots({ spectra, summary, detector, be
               <YAxis stroke="#64748b" fontSize={11} />
               <Tooltip content={<CustomTooltip />} />
               <Area type="monotone" dataKey="primary" name="Cherenkov Primary" stroke="#f97316" fillOpacity={1} fill="url(#colorPrimary)" stackId="1" />
-              <Area type="monotone" dataKey="bremsstrahlung" name="Bremsstrahlung" stroke="#eab308" fillOpacity={1} fill="url(#colorBrems)" stackId="1" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -571,18 +558,6 @@ export default React.memo(function DynamicPlots({ spectra, summary, detector, be
             <span className="text-[9px] opacity-60 uppercase tracking-widest font-bold mb-1">Matrix Fluence Intensity</span>
             <span className="text-sm font-bold text-cyan-400">
               {summary.fluencePhotonsPerMm2 ? summary.fluencePhotonsPerMm2.toLocaleString() : "0"} photons/mm²
-            </span>
-          </div>
-          <div className={`flex flex-col justify-center items-center border-t sm:border-t-0 sm:border-l ${footerBorder}`}>
-            <span className="text-[9px] opacity-60 uppercase tracking-widest font-bold mb-1">Shielding Reference Status</span>
-            <span className="text-sm font-bold text-amber-500 dark:text-amber-400">
-              {neutralFluenceClass(summary.radSafetyClassification || "Unshielded Zone")}
-            </span>
-          </div>
-          <div className={`flex flex-col justify-center items-center border-t sm:border-t-0 sm:border-l ${footerBorder}`}>
-            <span className="text-[9px] opacity-60 uppercase tracking-widest font-bold mb-1">Fluence Calibration Dev</span>
-            <span className="text-sm font-bold text-emerald-500">
-              ± {summary.experimentalFluencePercentError ? summary.experimentalFluencePercentError.toFixed(2) : "0.00"} %
             </span>
           </div>
         </div>

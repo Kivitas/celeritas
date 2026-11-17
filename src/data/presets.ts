@@ -1499,7 +1499,7 @@ export const MATERIAL_PRESETS: MaterialPreset[] = [
     id: "quartz",
     name: "High-Purity Fused Silica (Quartz SiO2)",
     refractiveIndexStatic: 1.458,
-    sellmeierCoeffs: { B1: 0.696, C1: 0.0046, B2: 0.407, C2: 0.0135 },
+    sellmeierCoeffs: { B1: 0.6961663, C1: 0.00467914, B2: 0.4079426, C2: 0.01351206, B3: 0.8974794, C3: 97.934 }, // Malitson 1965, lambda in um, C in um^2; valid 0.21-6.7 um
     mu_a_base: 1e-6,
     mu_s_base: 0.0002,
     anisotropyG: 0.999,

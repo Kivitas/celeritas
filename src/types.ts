@@ -7,9 +7,9 @@ export interface MaterialPreset {
   id: string;
   name: string;
   refractiveIndexStatic: number;
-  sellmeierCoeffs?: { B1: number; C1: number; B2: number; C2: number }; // Dispersion model parameters
-  mu_a_base: number; // base absorption coefficient
-  mu_s_base: number; // base scattering coefficient
+  sellmeierCoeffs?: { B1: number; C1: number; B2: number; C2: number; B3?: number; C3?: number }; // Sellmeier terms, C in um^2
+  mu_a_base: number; // UNUSED: not read by the engine (see plan T2.2)
+  mu_s_base: number; // UNUSED: not read by the engine (see plan T2.2)
   anisotropyG: number; // Henyey-Greenstein g factor
 }
 
@@ -202,44 +202,27 @@ export interface SimulationParams {
 
 export interface SimulationResultPoint {
   wavelengthNm: number;
-  primaryCherenkov: number;
-  secondaryCherenkov: number;
-  bremsstrahlung: number;
-  fluorescence: number;
-  background: number;
-  totalYield: number;
-  transmission: number;
+  primaryCherenkov: number; // Frank-Tamm photons per particle in this bin, before transport and detection
+  totalYield: number; // photons per particle in this bin reaching the detector (transport and detector coupling applied)
+  transmission: number; // path-averaged optical transmission, 0..1
 }
 
 export interface SimulationSummary {
-  beta: number; // Particle speed fraction (v/c)
-  betaThreshold: number; // Cherenkov threshold velocity
+  beta: number; // v/c
+  betaThreshold: number; // 1/n at the reference wavelength
   isCherenkovGenerated: boolean;
-  cherenkovAngleDeg: number;
-  // Units convention: totalPhotonsEmitted / totalPhotonsDetected are PER RUN
-  // (per-particle value * numberFiredParticles). Detected photons include detector QE and DAQ deadtime.
+  cherenkovAngleDeg: number; // photon-count-unweighted mean over bins above threshold
+  // PER RUN (per-particle value * numberFiredParticles). Detected photons include detector QE and DAQ deadtime.
   totalPhotonsEmitted: number;
   totalPhotonsDetected: number;
-  // Per particle: Frank-Tamm primary + secondary Cherenkov photons (Z^2 included), before optical transport.
+  // Per particle, Frank-Tamm, before optical transport and detection.
   photonsPerParticle: number;
   peakWavelengthNm: number;
-  // 10*log10(S / sqrt(S + B)) with S = detected photons per run, B = dark counts per run. 0 when no signal.
+  // 10*log10(S / sqrt(S + B)), S = detected photons per run, B = dark counts per run. 0 when no signal.
   signalToNoiseRatioDb: number;
   cherenkovThresholdEnergyMeV: number;
-
-  // Highly advanced custom thermodynamic & collision parameters
-  isThermalAnomaly: boolean;
-  thermalDeviationPct: number;
-  hasPositiveBreak: boolean;
-  hasNegativeBreak: boolean;
   firedParticles: number;
-  totalCollisions: number;
-  radiationLossMeV: number;
-
-  // New highly scientific metrics
-  fluencePhotonsPerMm2: number; // Photon fluence at the detector face
-  experimentalFluencePercentError: number; // Discrepancy for Experimental treatment planning
-  radSafetyClassification: string; // "Negligible", "Controlled Area", "High Radiation Field", "Extremely Lethal Beam"
+  fluencePhotonsPerMm2: number; // detected photons per run over the beam spot area
 }
 
 export interface BatchRow {

@@ -21,14 +21,6 @@ interface PhysicsDetailsPanelProps {
   activeMaterialPreset: MaterialPreset;
 }
 
-// Neutral display labels for physics-generated fluence classes (display only).
-const neutralFluenceClass = (s: string) => s
-  .replace("Extremely Lethal Beam Zone (High Fluence)", "High-fluence zone")
-  .replace("High Radiation Field (Biohazard Control Required)", "High-fluence field (shielding review recommended)")
-  .replace("Controlled Active Beamline Area (Occupational Watch)", "Active beamline area (monitoring recommended)")
-  .replace("Radio-Safe / Research Minimal Influx", "Low-fluence reference")
-  .replace("Minimal Exposure / Research Grade", "Minimal fluence (reference)");
-
 export default function PhysicsDetailsPanel({ params, summary, isDarkMode, activeMaterialPreset }: PhysicsDetailsPanelProps) {
   const allActive = Object.values(params.componentsActive).every(v => v === true);
   
@@ -280,12 +272,6 @@ export default function PhysicsDetailsPanel({ params, summary, isDarkMode, activ
               <div className={`text-[8px] uppercase ${textLabel}`}>SNR Level</div>
               <div className={`text-sm font-bold font-mono ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>
                 {summary.signalToNoiseRatioDb.toFixed(1)} dB
-              </div>
-            </div>
-            <div>
-              <div className={`text-[8px] uppercase ${textLabel}`}>Fluence Class</div>
-              <div className={`text-sm font-bold font-mono ${isDarkMode ? "text-amber-400" : "text-amber-600"}`}>
-                {neutralFluenceClass(summary.radSafetyClassification).split(' ')[0]}
               </div>
             </div>
           </div>
