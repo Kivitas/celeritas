@@ -8,13 +8,18 @@ It is written to be executed by models working one task at a time with no memory
 
 ## 0. Status (updated as work lands)
 
-| Phase | State | Notes |
-|---|---|---|
-| 0 Guard rails | Done | CI on PRs, lint, strict TS, regression snapshot, coverage gate (core 93%). T0.2 leaves component dead-code as warnings. |
-| 1 Remove invented output | Done | Synthetic plots, Monte Carlo tab, inert controls, fabricated PDF/export text, formula library cut to 15 model-relevant entries. The LabTab is now an illustration. |
-| 2 Sourced data | Closed with deviations | T2.1: K±, deuteron, u sourced; alpha and C-12 still unverified (not found in PDG pages). T2.2: 8 materials verified (fused silica, N-BK7, CaF2, sapphire, MgF2, LiF, water, PMMA), plan asked for about 12; PbF2 excluded because the convention could not be settled. T2.3: Beer-Lambert path implemented; water absorption from Hale and Querry 1973, not Pope and Fry 1997 (not obtainable), covering 400-650 nm only. |
-| 3 Physics core | In progress | T3.1 split done (no behaviour change). T3.2 precision done. T3.4 energy loss next: NIST ESTAR and PSTAR values for water are in hand. |
-| 4-9 | Not started | |
+| Phase | State | Delivered | Not delivered (blocker) |
+|---|---|---|---|
+| 0 Guard rails | Done | CI on PRs, lint, strict TS, regression snapshot, coverage gate | Component dead-code warnings (30) |
+| 1 Remove invented output | Done | Synthetic plots, MC tab, inert controls, fabricated export text, formula library cut to 15 | - |
+| 2 Sourced data | Closed with deviations | PDG masses (e, mu, pi, K, p, n, d, u); 8 materials with sourced dispersion; Hale and Querry water absorption; Beer-Lambert path | Alpha and C-12 masses (not found in PDG pages); Pope and Fry absorption (not obtainable); 8 of about 12 materials; PbF2 (convention unresolved) |
+| 3 Physics core | Closed with deviations | Module split; precision near beta=1; exact bin integration; yield-weighted angle and spread; energy loss for water (NIST residuals recorded); no rounding in core | Density effect (no sourced water parameters: electrons 4% high at 2 MeV, 13% at 10 MeV); beta spectra beyond the allowed shape (Sr-90 +29%, Y-90 +16%) |
+| 4 Real Monte Carlo and detector | Partial | Seeded photon MC agreeing with the analytic engine within 4 SE; statistical errors | Scattering, delta rays, Fresnel and TIR, Web Worker; photosensor curves (no datasheets fetched); ring imaging and PID |
+| 5 Validation | Partial | 17 sourced records, runner, report (15 pass, 1 known limitation, 1 not automated) | Geant4 cross-check (no Geant4 in this environment); in-app Validation tab still shows arithmetic checks |
+| 6 Reproducibility | Partial | Versioned schema with validation, import and export, provenance, headless CLI | Parameter-scan feature; PDF export is still a screenshot |
+| 7 Engineering | Partial | Dependencies cut; any removed; error boundary; initial JS 142 kB gzip; browser smoke test; Vitest 5 (audit: 2 low) | App.tsx still 686 lines; full accessibility pass; component tests |
+| 8 Security | Done with caveat | CSP (headers and meta); in-memory keys with opt-in; grounded and labelled assistant | Model identifiers not re-verified against provider lists |
+| 9 Documentation | Partial | Physics manual, contributor guide, changelog, templates, README | Citable release: Zenodo archive and a tagged release need an external account; no tag created |
 
 ## 1. Where the project stands
 
