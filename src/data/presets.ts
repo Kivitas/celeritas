@@ -21,7 +21,7 @@ export const ISOTOPE_PRESETS: IsotopeProfile[] = [
     id: "cs137",
     name: "Cesium-137 (Cs-137) [Relativistic Recoil Electron]",
     type: "beta-",
-    baseEnergyMeV: 0.512,
+    baseEnergyMeV: 0.51397, // ENSDF beta- endpoint to Ba-137m (Browne and Tuli 2007), NuDat 3 read 2026-11-17
     fluxIntensity: 550000,
     pdgId: 11,
     polarization: 0.22,
