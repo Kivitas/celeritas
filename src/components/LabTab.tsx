@@ -203,12 +203,12 @@ export default function LabTab({ params, detector, summary, isDarkMode }: LabTab
       const zCentered = z - zCenter;
 
       // Rotate around Y-axis
-      let x1 = (x + timeOffset) * cosY - zCentered * sinY;
-      let z1 = zCentered * cosY + (x + timeOffset) * sinY;
+      const x1 = (x + timeOffset) * cosY - zCentered * sinY;
+      const z1 = zCentered * cosY + (x + timeOffset) * sinY;
 
       // Rotate around X-axis
-      let y2 = y * cosX - z1 * sinX;
-      let z2 = y * sinX + z1 * cosX;
+      const y2 = y * cosX - z1 * sinX;
+      const z2 = y * sinX + z1 * cosX;
 
       // Orthographic Projection
       return {
@@ -799,9 +799,9 @@ export default function LabTab({ params, detector, summary, isDarkMode }: LabTab
       ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
       ctx.lineWidth = 0.5;
       for (let i = -sSize; i <= sSize; i += 2) {
-        let l1 = project(i, -sSize, targetZ); let l2 = project(i, sSize, targetZ);
+        const l1 = project(i, -sSize, targetZ); const l2 = project(i, sSize, targetZ);
         ctx.beginPath(); ctx.moveTo(l1.screenX, l1.screenY); ctx.lineTo(l2.screenX, l2.screenY); ctx.stroke();
-        let l3 = project(-sSize, i, targetZ); let l4 = project(sSize, i, targetZ);
+        const l3 = project(-sSize, i, targetZ); const l4 = project(sSize, i, targetZ);
         ctx.beginPath(); ctx.moveTo(l3.screenX, l3.screenY); ctx.lineTo(l4.screenX, l4.screenY); ctx.stroke();
       }
 

@@ -3,9 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { SimulationParams, DetectorSettings, MaterialPreset, IsotopeProfile } from "../types";
-import { MATERIAL_PRESETS } from "./presets";
-import { ISOTOPE_PRESETS } from "./presets";
+import { SimulationParams, DetectorSettings } from "../types";
 
 export interface ExperimentPreset {
   id: string;

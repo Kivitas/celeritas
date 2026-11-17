@@ -1,5 +1,3 @@
-import React from "react";
-
 export interface FormulaData {
   id: string;
   title: string;
