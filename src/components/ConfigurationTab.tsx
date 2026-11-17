@@ -996,67 +996,6 @@ export default function ConfigurationTab({
              </div>
           </div>
 
-          {/* Dose-rate reference mode panel */}
-          <div className={`p-3 border rounded-lg space-y-2.5 ${isDarkMode ? "bg-slate-950/80 border-slate-800" : "bg-slate-150/40 border-slate-200"}`}>
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-orange-500 uppercase tracking-wider flex items-center space-x-1">
-                <span>🔬 Dose-Rate Reference Mode</span>
-              </span>
-              <input
-                type="checkbox"
-                checked={params.experimentalModeActive}
-                onChange={(e) => updateParam("experimentalModeActive", e.target.checked)}
-                className="accent-orange-500 h-4 w-4 rounded border-slate-300 cursor-pointer"
-                id="Experimental-mode-checkbox"
-              />
-            </div>
-
-            {params.experimentalModeActive && (
-              <div className="space-y-2 animate-fade border-t border-slate-200 dark:border-slate-800 pt-2.5">
-                <div className="space-y-1">
-                  <label className={`text-[9px] uppercase font-bold block ${textLabel}`}>Reference Application</label>
-                  <select
-                    value={params.experimentalApplication}
-                    onChange={(e) => updateParam("experimentalApplication", e.target.value as any)}
-                    className={`w-full rounded px-2.5 py-1.5 text-[11px] outline-none font-semibold ${inputBg}`}
-                  >
-                    <option value="imrt">IMRT Beam Reference (reference only)</option>
-                    <option value="proton_therapy_verify">Proton Range Reference (reference only)</option>
-                    <option value="nuclear_dosimetry">Isotope Source Reference (Y-90 Microspheres)</option>
-                    <option value="ophthalmic_dosimetry">Alternative application (reference only)</option>
-                    <option value="molecular_imaging">CLI Molecular Imaging Reference</option>
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-slate-300">
-                  <div>
-                    <label className={`text-[9px] uppercase font-bold block ${textLabel}`}>Dose-Rate Reference (Gy/min)</label>
-                    <input
-                      type="number"
-                      step="0.05"
-                      min="0"
-                      max="50"
-                      value={params.fluenceRateGyMin}
-                      onChange={(e) => updateParam("fluenceRateGyMin", Math.max(0, Math.min(50, parseFloat(e.target.value) || 0)))}
-                      className={`w-full rounded px-2 py-1 text-xs font-mono text-orange-500 focus:ring-1 focus:ring-orange-500 outline-none ${inputBg}`}
-                    />
-                  </div>
-                  <div>
-                    <label className={`text-[9px] uppercase font-bold block ${textLabel}`}>Cumulative Reference (Gy)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="120"
-                      value={params.cumulativeFluenceGy}
-                      onChange={(e) => updateParam("cumulativeFluenceGy", Math.max(0, Math.min(120, parseFloat(e.target.value) || 0)))}
-                      className={`w-full rounded px-2 py-1 text-xs font-mono text-orange-500 focus:ring-1 focus:ring-orange-500 outline-none ${inputBg}`}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
 
           {/* Detector Geometry & Materials */}
           <div className="border-t border-slate-150/10 pt-3 space-y-3">

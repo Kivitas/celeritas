@@ -335,9 +335,11 @@ describe('particle mass selection (phase 2.1)', () => {
 });
 
 describe('dispersion data', () => {
-  it('fused silica (Malitson 1965, three-term Sellmeier) gives n = 1.4584 at 589.3 nm, 20 C to 2e-4', () => {
-    // Reproduces the published fit; the coefficient transcription is what this guards against.
+  it('fused silica three-term Sellmeier reproduces the transcribed Malitson fit at 589.3 nm (n = 1.458403)', () => {
+    // Self-consistency check: 1.458403 is the value this formula gives when evaluated by hand from the
+    // coefficients in presets.ts. It guards against transcription errors at the 1e-5 level. It is NOT an
+    // independent check against a published index; that comparison (Malitson 1965) is still pending.
     const quartzPreset = MATERIAL_PRESETS.find((m) => m.id === 'quartz')!;
-    expect(Math.abs(getRefractiveIndexAt(589.3, quartzPreset, 293.15) - 1.4584)).toBeLessThan(2e-4);
+    expect(Math.abs(getRefractiveIndexAt(589.3, quartzPreset, 293.15) - 1.458403)).toBeLessThan(1e-5);
   });
 });

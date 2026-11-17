@@ -65,7 +65,7 @@ export function calculateRelativisticBeta(energyMeV: number, particleMassMeV: nu
  * precision when beta is within 1e-12 of 1: delta = 1 / (gamma^2 (1 + beta)).
  */
 export function oneMinusBetaFromEnergy(energyMeV: number, particleMassMeV: number): number {
-  if (!(energyMeV > 0)) return 1;
+  if (!(energyMeV > 0) || !(particleMassMeV > 0)) return 1;
   const gamma = 1 + energyMeV / particleMassMeV;
   const beta = calculateRelativisticBeta(energyMeV, particleMassMeV);
   return 1 / (gamma * gamma * (1 + beta));
