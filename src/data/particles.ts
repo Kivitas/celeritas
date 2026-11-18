@@ -36,8 +36,8 @@ export const PARTICLES: Record<number, ParticleInfo> = {
   [-321]: { pdgId: -321, name: "kaon (charged, antiparticle)", massMeV: 493.677, massUncertaintyMeV: 0.013, source: `PDG 2026, ${PDG_PAGE}/Particle.action?node=S010 (HTML page value)`, verified: true },
   1000010020: { pdgId: 1000010020, name: "deuteron", massMeV: 1875.61294500, massUncertaintyMeV: 0.00000058, source: "PDG 2026 Physical Constants review, Table 1.1, https://pdg.lbl.gov/2026/reviews/rpp2026-rev-phys-constants.pdf", verified: true },
   // Not found in the PDG pages fetched so far (plan T2.1). Values below are retained from earlier code.
-  1000020040: { pdgId: 1000020040, name: "alpha (He-4 nucleus)", massMeV: 3727.3794, source: "earlier code, not checked against PDG", verified: false },
-  1000060120: { pdgId: 1000060120, name: "carbon-12 ion", massMeV: 11177.928, source: "earlier code, not checked; this is the neutral-atom mass, a bare nucleus is lighter", verified: false },
+  1000020040: { pdgId: 1000020040, name: "alpha (He-4 nucleus)", massMeV: 3727.3793, source: "DERIVED, not PDG: AME2020 atomic mass of He-4 (4.002 603 254 13 u, https://www-nds.iaea.org/amdc/ame2020/mass_1.mas20.txt) times u, minus 2 electron masses. Electron binding not subtracted.", verified: false },
+  1000060120: { pdgId: 1000060120, name: "carbon-12 ion (bare nucleus)", massMeV: 11174.8633, source: "DERIVED, not PDG: AME2020 atomic mass of C-12 (12 u exact), times u, minus 6 electron masses. Electron binding not subtracted.", verified: false },
 };
 
 /** Atomic mass unit in MeV/c^2. PDG 2026 Physical Constants review, Table 1.1 (931.494 103 72 +- 0.000 000 29). */

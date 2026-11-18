@@ -1,6 +1,7 @@
 # Validation report
 
-Generated from validation/references.json (retrieved 2026-11-17). Regenerate with `npm run validate`.
+Generated from src/data/references.json (retrieved 2026-11-17). Regenerate with `npm run validate`.
+17 records.
 
 | id | quantity | reference | computed | status | source |
 |---|---|---|---|---|---|
@@ -17,7 +18,7 @@ Generated from validation/references.json (retrieved 2026-11-17). Regenerate wit
 | estar-electron-csda-1MeV | electron CSDA range, water, 1 MeV | 0.4367 g/cm^2 | 0.437013 | pass | NIST ESTAR |
 | pstar-proton-csda-100MeV | proton CSDA range, water, 100 MeV | 7.718 g/cm^2 | 7.67932 | pass | NIST PSTAR |
 | pstar-proton-csda-200MeV | proton CSDA range, water, 200 MeV | 25.96 g/cm^2 | 25.9198 | pass | NIST PSTAR |
-| ensdf-sr90-endpoint | Sr-90 beta- endpoint | 545.9 keV | not automated | - | ENSDF (Basu and McCutchan 2020) via NuDat 3 |
+| ensdf-sr90-endpoint | Sr-90 beta- endpoint | 545.9 keV | - | not automated | ENSDF (Basu and McCutchan 2020) via NuDat 3 |
 | nist-n-bk7-nd | N-BK7 refractive index at 587.56 nm | 1.5168  | 1.51680 | pass | refractiveindex.info, SCHOTT N-BK7, printed nd |
 | hale-water-abs-450nm | water absorption coefficient at 450 nm, 25 C | 0.028484 1/m | 0.0284838 | pass | Hale and Querry 1973 via refractiveindex.info: k = 1.02e-9 at 450 nm, alpha = 4 pi k / lambda |
 | derived-threshold-electron-water | electron Cherenkov threshold kinetic energy, n = 1.328 | 0.2656 MeV | 0.265587 | pass | derived: PDG electron mass and n = 1.328 (heavy-water index from earlier code, NOT sourced); arithmetic check |
