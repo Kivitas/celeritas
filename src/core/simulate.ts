@@ -95,7 +95,6 @@ export function runCherenkovSimulation(
   let maxWavelength = 300;
   let maxWavelengthYield = -1;
 
-  const g = materialPreset.anisotropyG;
 
   // Wavelength grid
   let binWidth = Number.isFinite(params.binResolutionNm) && params.binResolutionNm > 0
