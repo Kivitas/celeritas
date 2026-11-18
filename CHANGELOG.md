@@ -23,6 +23,7 @@ release is tagged. Changes that alter results are marked **[results]**.
 - Content-security policy, per-tab error boundary, browser smoke test.
 
 ### Removed
+- The AI assistant ("advisor") and every provider API integration, including the API key form and its local storage. The radiator thickness scan remains as a plain grid search.
 - Monte Carlo tab and its controls (they changed nothing).
 - Heuristic emission channels (secondary Cherenkov, bremsstrahlung, fluorescence, Compton, transition radiation).
 - Synthetic plots, the 3D lab scene, the fabricated PDF narrative, and the dose-rate panel.

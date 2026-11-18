@@ -52,10 +52,6 @@ Deployment: pushing to master runs .github/workflows/deploy.yml, which typecheck
 
 Cloudflare Pages reads `wrangler.toml` (project name and output directory) and `public/_headers` (security headers) and `public/_redirects` (SPA fallback to `index.html`).
 
-## AI assistant
-
-The app includes an optional AI assistant (OpenAI, Anthropic, Google Gemini, Mistral). You enter your own API key in the app. Keys are stored in the browser's localStorage and are readable by any script on the page. Requests go directly from the browser to the provider. For production use, route requests through a backend proxy that holds the keys.
-
 ## Project structure
 
 ```

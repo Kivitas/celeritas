@@ -32,7 +32,7 @@ export const PARTICLES: Record<number, ParticleInfo> = {
   2212: { pdgId: 2212, name: "proton", massMeV: 938.27208943, massUncertaintyMeV: 0.00000029, source: `PDG 2026, ${PDG_PAGE}/Particle.action?node=S016`, verified: true },
   [-2212]: { pdgId: -2212, name: "antiproton", massMeV: 938.27208943, massUncertaintyMeV: 0.00000029, source: `PDG 2026, ${PDG_PAGE}/Particle.action?node=S016`, verified: true },
   2112: { pdgId: 2112, name: "neutron", massMeV: 939.5654219, massUncertaintyMeV: 0.0000005, source: `PDG 2026, ${PDG_PAGE}/Particle.action?node=S017`, verified: true },
-  321: { pdgId: 321, name: "kaon (charged)", massMeV: 493.677, massUncertaintyMeV: 0.013, source: `PDG 2026, ${PDG_PAGE}/Particle.action?node=S010 (HTML page value; the PDG API gives 0.015 for the same mass)`, verified: true },
+  321: { pdgId: 321, name: "kaon (charged)", massMeV: 493.677, massUncertaintyMeV: 0.013, source: `PDG 2026, ${PDG_PAGE}/Particle.action?node=S010 (HTML page value; the PDG listing shows 0.015 for the fit)`, verified: true },
   [-321]: { pdgId: -321, name: "kaon (charged, antiparticle)", massMeV: 493.677, massUncertaintyMeV: 0.013, source: `PDG 2026, ${PDG_PAGE}/Particle.action?node=S010 (HTML page value)`, verified: true },
   1000010020: { pdgId: 1000010020, name: "deuteron", massMeV: 1875.61294500, massUncertaintyMeV: 0.00000058, source: "PDG 2026 Physical Constants review, Table 1.1, https://pdg.lbl.gov/2026/reviews/rpp2026-rev-phys-constants.pdf", verified: true },
   // Not found in the PDG pages fetched so far (plan T2.1). Values below are retained from earlier code.

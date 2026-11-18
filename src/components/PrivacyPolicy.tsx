@@ -30,13 +30,10 @@ const PrivacyPolicy: React.FC = () => {
             <p>
               Redshift operates primarily as a client-side simulation tool. We do not require you to create an account, and we do not collect personally identifiable information (PII) during your standard use of the physics simulation tools.
             </p>
-            <p>
-              If you choose to use the AI Assistant features, your prompts and associated telemetry may be processed by third-party AI providers (such as OpenAI, Anthropic, or Google) according to the API keys you provide locally. Your API keys are stored locally in your browser's local storage and are never transmitted to our servers.
-            </p>
 
             <h2 className="text-xl font-semibold text-white mt-8 mb-4">2. Local Storage & Cookies</h2>
             <p>
-              We use standard browser features like Local Storage and Session Storage to save your simulation parameters, interface preferences (such as dark mode), and locally stored API keys. This data remains on your device. We use a single cookie or local storage item to remember your cookie consent preferences.
+              We use standard browser features like Local Storage and Session Storage to save your simulation parameters, and interface preferences (such as dark mode). This data remains on your device. We use a single cookie or local storage item to remember your cookie consent preferences.
             </p>
 
             <h2 className="text-xl font-semibold text-white mt-8 mb-4">3. Log Files</h2>

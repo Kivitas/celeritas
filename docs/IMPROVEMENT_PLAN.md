@@ -20,7 +20,7 @@ Status as of 2026-11-18. "Blocked" means the missing piece needs a source or acc
 | 5 Validation | Partial | 17 records with sources, one shared evaluation module used by tests and the in-app Validation tab (15 pass, 1 known limitation, 1 not automated) | Geant4 cross-check: the Python binding installed, but the sandbox classifier denied the import check, so no cross-check was run. Blocked here |
 | 6 Reproducibility | Partial | Versioned schema with validation, import and export, provenance, headless CLI | Parameter-scan feature and a data-based PDF report: not implemented |
 | 7 Engineering | Partial | Dependencies cut; any removed; error boundary; initial JS 142 kB gzipped; browser smoke test; Vitest 5 | App.tsx still 686 lines; accessibility pass (axe) not run; component tests not written |
-| 8 Security | Partial | CSP (headers and meta); keys in memory with opt-in; grounded and labelled assistant | Provider model identifiers not re-verified |
+| 8 Security | Partial | CSP (headers and meta); no provider API or key handling (assistant removed 2026-11-18) |
 | 9 Documentation | Partial | Physics manual, contributor guide, changelog, templates, README; project renamed to Redshift | Citable release: needs an external Zenodo account and a tagged release (blocked). No tag created |
 
 ## 1. Where the project stands
@@ -307,8 +307,8 @@ src/core/
 ### Phase 8: Security
 
 **T8.1 Content Security Policy**: add a CSP to `public/_headers` allowing scripts from self only and `connect-src` limited to the four AI provider origins. GitHub Pages cannot set headers, so also add the `<meta http-equiv>` form in `index.html`.
-**T8.2 API key handling**: keep keys in memory by default; persisting to `localStorage` becomes an explicit opt-in with the warning shown at that moment. Remove the privacy-policy and cookie-banner text if it describes practices the app does not have, and make it describe what is actually stored.
-**T8.3 AI assistant grounding**: move provider model ids into one config file with a comment on when they were last checked (`gpt-4o` and `gemini-2.5-flash` are dated). Send the assistant the validated result object with units, instruct it to quote only numbers present in that object, and label its output as AI-generated and unverified. Sanitise rendered markdown.
+**T8.2 API key handling**: removed with the assistant (no provider API is used).
+**T8.3 AI assistant grounding**: removed with the assistant.
 
 ### Phase 9: Documentation and release
 

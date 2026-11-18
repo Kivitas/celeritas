@@ -12,7 +12,6 @@ import {
   MUON_MASS_MEV,
 } from "./core/physics";
 import { validateRunConfig, configToEngine, type RunConfig } from "./core/runConfig";
-import { sendAIMessage, loadApiKeys, saveApiKeys, clearStoredApiKeys, loadRememberFlag, saveRememberFlag, getActiveProvider, AI_PROVIDERS } from "./services/ai";
 import { MATERIAL_PRESETS, ISOTOPE_PRESETS } from "./data/presets";
 import { BEAMLINE_PRESETS } from "./data/beamlinePresets";
 
@@ -40,7 +39,6 @@ import {
   FileText,
   Send,
   HelpCircle,
-  Lightbulb,
   X,
   Printer,
   RefreshCw,
@@ -137,29 +135,7 @@ export default function App() {
   // Bulk parameters calibration spreadsheets list (generic high-purity physical tracks reference logs)
   const [batchRows, setBatchRows] = useState<BatchRow[]>(INITIAL_BATCH_ROWS);
 
-  // AI Assistant Chat interactive panel states
-  const [assistantLogs, setAssistantLogs] = useState<string>(
-    "Welcome to the HEP AI Spectrometry Advisor. Ask questions about relativistic critical angles, Frank-Tamm parameters, Sellmeier dispersion parameters, or recommend silicon sensor configurations for your particle radiation tracks!"
-  );
-  const [assistantQuery, setAssistantQuery] = useState("");
-  const [isAiLoading, setIsAiLoading] = useState(false);
-  // Keys live in memory by default. They are written to localStorage only after the user opts in (plan T8.2).
-  const [rememberKeys, setRememberKeys] = useState<boolean>(() => loadRememberFlag());
-  const [apiKeys, setApiKeys] = useState<Record<string, string>>(() => (loadRememberFlag() ? loadApiKeys() : {}));
-  const [showAiConfig, setShowAiConfig] = useState(false);
-
-  const updateApiKey = (id: string, key: string) => {
-    const newKeys = { ...apiKeys, [id]: key };
-    setApiKeys(newKeys);
-    if (rememberKeys) saveApiKeys(newKeys);
-  };
-
-  const setRemember = (on: boolean) => {
-    setRememberKeys(on);
-    saveRememberFlag(on);
-    if (on) saveApiKeys(apiKeys);
-    else clearStoredApiKeys();
-  };
+  const [optimizerMessage, setOptimizerMessage] = useState<string | null>(null);
 
   // PDF export loading state
   const [isExportingPdf, setIsExportingPdf] = useState(false);
@@ -189,7 +165,7 @@ export default function App() {
   }, [params, activeMaterialPreset, activeIsotopePreset, detector]);
 
   // Scan radiator thickness (1-200 mm, 1 mm steps) and keep the one with the highest SNR.
-  // Ties keep the smaller thickness. Purely local: no AI call.
+  // Ties keep the smaller thickness.
   const optimizeThickness = () => {
     let bestThickness = 1;
     let bestSnr = -Infinity;
@@ -207,8 +183,8 @@ export default function App() {
     }
     const previousSnr = simResult.summary.signalToNoiseRatio;
     setParams((prev) => ({ ...prev, radiatorThicknessMm: bestThickness }));
-    setAssistantLogs(
-      `Thickness optimised to ${bestThickness} mm: S/√(S+B) ${bestSnr.toFixed(2)} (was ${previousSnr.toFixed(2)}). Optimisation scans radiator thickness only; it does not change other settings.`
+    setOptimizerMessage(
+      `Thickness set to ${bestThickness} mm: S/√(S+B) ${bestSnr.toFixed(2)} (was ${previousSnr.toFixed(2)}). The scan changes radiator thickness only.`
     );
   };
 
@@ -243,37 +219,6 @@ export default function App() {
     if (preset.detector) {
       const detectorOverrides = preset.detector;
       setDetector((prev) => ({ ...prev, ...detectorOverrides }));
-    }
-  };
-
-  // Submit prompts to the full-stack AI advisor
-  const queryWebAssistant = async (customPrompt?: string) => {
-    const activePrompt = customPrompt || assistantQuery;
-    if (!activePrompt.trim()) return;
-
-    const provider = getActiveProvider(apiKeys);
-    if (!provider) {
-      setAssistantLogs("Error: No API key configured. Please enter an API key in the AI Configuration.");
-      setShowAiConfig(true);
-      return;
-    }
-
-    setIsAiLoading(true);
-    setAssistantLogs("HEP AI Consulting Node: Formulating spectroscopic physics assessment...");
-
-    try {
-      const text = await sendAIMessage(provider.id, apiKeys[provider.id], activePrompt, {
-        parameters: params,
-        siliconMatrix: detector,
-        calculatedSummary: simResult.summary,
-      });
-      setAssistantLogs(text);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "";
-      setAssistantLogs(`AI Solver Offline: ${message || "Network Timeout"}`);
-    } finally {
-      setIsAiLoading(false);
-      if (!customPrompt) setAssistantQuery("");
     }
   };
 
@@ -342,14 +287,6 @@ export default function App() {
                   className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
                 >
                   {isDarkMode ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-                </button>
-                <button
-                  onClick={() => setShowAiConfig(!showAiConfig)}
-                  className={`p-1.5 rounded-lg transition-all ${
-                    showAiConfig ? 'bg-orange-500/15 text-orange-400' : 'text-slate-400 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  <Lightbulb className="w-3.5 h-3.5" />
                 </button>
               </div>
               <button
@@ -493,160 +430,22 @@ export default function App() {
             </AnimatePresence>
           </section>
 
-          {/* Right Column / Floating Drawer: AI Assistant consultation panel */}
-          {/* For now, we will render it below the main section on small screens, or hidden behind a toggle if we wanted a drawer. Let's just stack it at the bottom for now to give the main workspace 100% width above. */}
           <section className="w-full space-y-6 mt-8 border-t border-white/10 pt-8">
-
             <div className="flex items-center space-x-3 mb-4">
-               <h2 className="text-xl font-bold text-white tracking-widest font-sans">AUXILIARY SYSTEMS</h2>
-               <div className="h-px bg-white/10 flex-1"></div>
+              <h2 className="text-xl font-bold text-white tracking-widest font-sans">AUXILIARY SYSTEMS</h2>
+              <div className="h-px bg-white/10 flex-1"></div>
             </div>
-
-            {/* Live calibration metrics strip */}
-            <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 to-slate-950 border border-white/5 shadow-lg">
-              <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 via-transparent to-transparent pointer-events-none" />
-              <div className="relative grid grid-cols-3 gap-px bg-white/5">
-                <div className="p-4 text-center bg-slate-900">
-                  <div className="flex items-center justify-center gap-1.5 mb-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-orange-500/60" />
-                    <span className="text-[9px] uppercase tracking-widest text-slate-500 font-mono">Speed β</span>
-                  </div>
-                  <div className="text-lg font-bold font-mono text-orange-400">{simResult.summary.beta.toFixed(4)}</div>
-                </div>
-                <div className="p-4 text-center bg-slate-900/50">
-                  <div className="flex items-center justify-center gap-1.5 mb-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500/60" />
-                    <span className="text-[9px] uppercase tracking-widest text-slate-500 font-mono">Cone θc</span>
-                  </div>
-                  <div className="text-lg font-bold font-mono text-blue-400">{simResult.summary.cherenkovAngleDeg.toFixed(2)}°</div>
-                </div>
-                <div className="p-4 text-center bg-slate-900/50">
-                  <div className="flex items-center justify-center gap-1.5 mb-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/60" />
-                    <span className="text-[9px] uppercase tracking-widest text-slate-500 font-mono">SNR</span>
-                  </div>
-                  <div className="text-lg font-bold font-mono text-emerald-400">{simResult.summary.signalToNoiseRatio.toFixed(2)}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* AI Assistant Chat frame */}
-            <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 to-slate-950 border border-white/5 shadow-lg flex flex-col">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl pointer-events-none" />
-              <div className="relative p-5">
-                <div className="flex items-center gap-3 pb-4 mb-4 border-b border-white/5">
-                  <div className="relative">
-                    <div className="w-3 h-3 rounded-full bg-orange-500 animate-pulse-glow shrink-0"></div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-extrabold tracking-wider uppercase font-sans text-white">
-                      HEP AI Spectrometry Advisor
-                    </h3>
-                    <p className="text-[10px] text-slate-400 font-mono truncate">Theoretical & Calibration Assistant</p>
-                  </div>
-                  <button
-                    onClick={() => setShowAiConfig(!showAiConfig)}
-                    className={`px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition shrink-0 border ${
-                      showAiConfig 
-                        ? "bg-orange-500/15 text-orange-400 border-orange-500/30" 
-                        : "bg-white/5 border-white/5 text-slate-300 hover:bg-white/10"
-                    }`}
-                  >
-                    {showAiConfig ? "Close" : "API Keys"}
-                  </button>
-                </div>
-
-              {showAiConfig && (
-                <div className="mb-4 p-3 bg-slate-800/50 rounded-lg space-y-2 border border-slate-700">
-                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-300">AI Provider Keys</h4>
-                  <p className="text-[9px] text-slate-400">Keys are kept in memory and are lost on reload unless you choose to remember them. Requests go directly from this browser to the provider.</p>
-                  <label className="flex items-start gap-2 text-[9px] text-amber-300">
-                    <input type="checkbox" checked={rememberKeys} onChange={(e) => setRemember(e.target.checked)} />
-                    <span>Remember keys on this device. They are stored in localStorage, which any script on this page can read.</span>
-                  </label>
-                  {AI_PROVIDERS.map((p) => (
-                    <div key={p.id} className="flex flex-col">
-                      <label className="text-[9px] text-slate-400 mb-1">{p.label}</label>
-                      <input
-                        type="password"
-                        placeholder={`Enter ${p.label} API Key`}
-                        value={apiKeys[p.id] || ""}
-                        onChange={(e) => updateApiKey(p.id, e.target.value)}
-                        className="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-orange-500"
-                      />
-                    </div>
-                  ))}
-                  <p className="text-[9px] text-slate-500 mt-2">Keys are stored locally in your browser.</p>
-                </div>
-              )}
-
-              {/* Chat outcome console */}
-              <p className="text-[9px] opacity-70">AI-generated. Not verified against the simulator. Numbers should come from the Results and Validation tabs.</p>
-              <div className={`whitespace-pre-wrap border p-4 rounded-lg text-xs font-mono leading-relaxed max-h-[420px] min-h-[260px] overflow-y-auto ${isDarkMode ? "bg-slate-950 border-slate-800 text-emerald-400" : "bg-slate-50 border-slate-200 text-emerald-800"}`}>
-                {assistantLogs}
-              </div>
-
-              <div className="mt-4 space-y-3">
-                <label className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Suggested Physics Queries</label>
-                <div className="grid grid-cols-2 gap-2 text-left">
-                  <button
-                    onClick={() => queryWebAssistant(`Draft an academic summary for synchrotron relativistic electron tracking in Fused Silica`)}
-                    className={`py-2 px-3 border text-start text-[10px] rounded-lg transition ${isDarkMode ? "bg-slate-950 hover:bg-slate-850 border-slate-800 text-slate-300" : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700"}`}
-                  >
-                    ✉️ Synchrotron electron tracking in quartz
-                  </button>
-                  <button
-                    onClick={() => queryWebAssistant(`Explain the Frank-Tamm integrated yield limits in Liquid Argon`)}
-                    className={`py-2 px-3 border text-start text-[10px] rounded-lg transition ${isDarkMode ? "bg-slate-950 hover:bg-slate-850 border-slate-800 text-slate-300" : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700"}`}
-                  >
-                    📐 Explain Frank-Tamm integral formula
-                  </button>
-                  <button
-                    onClick={() => queryWebAssistant(`Recommend silicon sensor noise thresholds for cosmic Muon tracking`)}
-                    className={`py-2 px-3 border text-start text-[10px] rounded-lg transition col-span-2 ${isDarkMode ? "bg-slate-950 hover:bg-slate-850 border-slate-800 text-slate-300" : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700"}`}
-                  >
-                    🚀 Recommend silicon sensor configurations
-                  </button>
-                </div>
-
-                <div className="flex space-x-2 border-t border-slate-100/10 pt-3 mb-2">
-                  <button
-                    onClick={() => {
-                      if (!isAiLoading) optimizeThickness();
-                    }}
-                    className="flex-1 bg-gradient-to-r from-orange-600 to-rose-600 hover:from-orange-500 hover:to-rose-500 text-white font-bold text-[10px] uppercase tracking-wider py-1.5 rounded-lg transition shadow-lg flex justify-center items-center space-x-2 cursor-pointer"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    <span>Optimize Thickness</span>
-                  </button>
-                  <button
-                    onClick={() => queryWebAssistant("Generate a comprehensive summary of the current physics state.")}
-                    className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-[10px] uppercase tracking-wider py-1.5 rounded-lg transition shadow flex justify-center items-center cursor-pointer"
-                  >
-                    Generate Summary
-                  </button>
-                </div>
-                
-                {/* Question paste form */}
-                <div className="flex items-center space-x-2 pt-1">
-                  <input
-                    type="text"
-                    placeholder="Query specialized recommendations..."
-                    value={assistantQuery}
-                    onChange={(e) => setAssistantQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && queryWebAssistant()}
-                    disabled={isAiLoading}
-                    className={`flex-1 rounded-lg px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-orange-500 transition-all font-sans ${isDarkMode ? "bg-slate-950 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-800"}`}
-                  />
-                  <button
-                    onClick={() => queryWebAssistant()}
-                    disabled={isAiLoading || !assistantQuery.trim()}
-                    className="p-1.5 bg-orange-500 hover:bg-orange-600 disabled:bg-slate-100 disabled:opacity-40 rounded-lg text-white transition cursor-pointer"
-                  >
-                    <Send className="w-3.5 h-3.5 fill-none" />
-                  </button>
-                </div>
-              </div>
+            <div className="rounded-xl bg-slate-900/80 border border-white/5 p-5 space-y-3">
+              <h3 className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Radiator thickness scan</h3>
+              <p className="text-[10px] text-slate-400">Scans 1–200 mm and sets the thickness that maximises S/√(S+B). Other settings are unchanged.</p>
+              <button
+                onClick={optimizeThickness}
+                className="w-full bg-gradient-to-r from-orange-600 to-rose-600 hover:from-orange-500 hover:to-rose-500 text-white font-bold text-[10px] uppercase tracking-wider py-1.5 rounded-lg transition shadow-lg flex justify-center items-center gap-2"
+              >
+                <RefreshCw className="w-3 h-3" />
+                <span>Optimize thickness</span>
+              </button>
+              {optimizerMessage && <p className="text-[10px] font-mono text-slate-200" aria-live="polite">{optimizerMessage}</p>}
             </div>
 
             {/* Detector Snapshot */}
@@ -697,7 +496,6 @@ export default function App() {
                 </div>
               </div>
             </div>
-          </div>
           </section>
         </main>
       {/* FOOTER */}
