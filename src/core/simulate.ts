@@ -28,7 +28,7 @@ import {
 import { calculateRelativisticBeta, oneMinusBetaFromEnergy, getCherenkovThresholdEnergy } from "./kinematics";
 import { sin2ThetaFromDelta, cherenkovAngleDeg } from "./cherenkov";
 import { getRefractiveIndexAt } from "./dispersion";
-import { getMediumCoefficients, calculateEffectiveAttenuation, pathAveragedTransmission, tabulatedAbsorptionPerMm } from "./transport";
+import { attenuationPerMm, pathAveragedTransmission } from "./transport";
 import { sampleEnergyLossPath } from "./stopping";
 
 /**
@@ -146,9 +146,7 @@ export function runCherenkovSimulation(
     // Frank-Tamm integral as the bins narrow (see the constant-index test in simulate.test.ts).
     // Optical transport: a sourced absorption table gives Beer-Lambert attenuation of ballistic photons.
     // Otherwise the unsourced diffusion-based approximation is used (plan T2.3).
-    const tabulatedMu = materialPreset.absorptionTable ? tabulatedAbsorptionPerMm(lambda, materialPreset.absorptionTable) : undefined;
-    const coeff = getMediumCoefficients(lambda, materialPreset.id);
-    const mu_eff = tabulatedMu !== undefined ? tabulatedMu : calculateEffectiveAttenuation(coeff.mu_a, coeff.mu_s, g);
+    const mu_eff = attenuationPerMm(lambda, materialPreset);
 
     // Frank-Tamm integral over the bin, n at the bin centre (see the comment above).
     const halfBin = binWidth / 2;

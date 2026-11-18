@@ -32,6 +32,14 @@ async function main() {
     }
   }
 
+  // Monte Carlo: run in the worker and wait for the comparison with the analytic engine.
+  await page.getByRole("button", { name: /Simulation/i }).first().click({ timeout: 5000 });
+  await page.waitForTimeout(400);
+  await page.getByRole("button", { name: /Run Monte Carlo/i }).click({ timeout: 10000 });
+  await page.getByText(/σ/).first().waitFor({ timeout: 120000 });
+  const mcText = await page.locator("#monte-carlo-panel").innerText();
+  if (!/σ/.test(mcText)) problems.push("monte carlo: no comparison shown");
+
   await browser.close();
 
   if (problems.length > 0) {

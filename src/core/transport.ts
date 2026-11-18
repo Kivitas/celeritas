@@ -91,3 +91,14 @@ export function pathAveragedTransmission(mu: number, emissionLengthMm: number, t
   }
   return Math.exp(-mu * thicknessMm);
 }
+
+/**
+ * Attenuation coefficient in mm^-1 at a wavelength for a material: the sourced absorption table when
+ * present, otherwise the diffusion-based approximation. Shared by the engine and the lab model.
+ */
+export function attenuationPerMm(wavelengthNm: number, material: { id: string; absorptionTable?: AbsorptionPoint[]; anisotropyG: number }): number {
+  const tabulated = material.absorptionTable ? tabulatedAbsorptionPerMm(wavelengthNm, material.absorptionTable) : undefined;
+  if (tabulated !== undefined) return tabulated;
+  const coeff = getMediumCoefficients(wavelengthNm, material.id);
+  return calculateEffectiveAttenuation(coeff.mu_a, coeff.mu_s, material.anisotropyG);
+}

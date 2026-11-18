@@ -21,6 +21,7 @@ import ConfigurationTab from "./components/ConfigurationTab";
 import Sidebar from "./components/Sidebar";
 import ErrorBoundary from "./components/ErrorBoundary";
 import PhysicsDetailsPanel from "./components/PhysicsDetailsPanel";
+import MonteCarloPanel from "./components/MonteCarloPanel";
 
 // Heavy tabs are loaded on demand to keep the initial bundle small
 const LabTab = lazy(() => import("./components/LabTab"));
@@ -468,6 +469,14 @@ export default function App() {
                         isDarkMode={isDarkMode}
                       />
                     </Suspense>
+
+                    <MonteCarloPanel
+                      params={params}
+                      material={activeMaterialPreset}
+                      isotope={activeIsotopePreset}
+                      detector={detector}
+                      isDarkMode={isDarkMode}
+                    />
 
                     {/* Physics Details Panel - Shows when all components enabled */}
                     <PhysicsDetailsPanel
