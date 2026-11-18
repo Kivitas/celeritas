@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this simulator in published work, please cite it. It is a research and teaching tool and has not been validated against experimental data; see the README for its limitations."
-title: "Celeritas: Cherenkov Spectrometry Simulator"
+title: "Redshift: Cherenkov Spectrometry Simulator"
 type: software
 authors:
   - name: "Kivitas"

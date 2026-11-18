@@ -42,7 +42,7 @@ export default React.memo(function Sidebar({ activeTab, onTabChange, isOpen, onC
                     <Zap className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <span className="text-white font-extrabold text-sm tracking-tight block">Celeritas</span>
+                    <span className="text-white font-extrabold text-sm tracking-tight block">Redshift</span>
                     <span className="text-[10px] text-slate-500 uppercase tracking-widest font-mono">Spectrometry Suite</span>
                   </div>
                 </div>
@@ -118,7 +118,7 @@ export default React.memo(function Sidebar({ activeTab, onTabChange, isOpen, onC
           <Zap className="w-5 h-5 text-white" />
         </div>
         <div>
-          <span className="text-white font-extrabold text-sm tracking-tight block">Celeritas</span>
+          <span className="text-white font-extrabold text-sm tracking-tight block">Redshift</span>
           <span className="text-[9px] text-slate-500 uppercase tracking-widest font-mono">Spectrometry Suite</span>
         </div>
       </div>

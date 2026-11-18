@@ -29,7 +29,7 @@ const NotFound: React.FC = () => {
       </div>
       
       <div className="mt-8 text-sm text-slate-500">
-        &copy; {new Date().getFullYear()} Celeritas Simulation Suite
+        &copy; {new Date().getFullYear()} Redshift Simulation Suite
       </div>
     </div>
   );

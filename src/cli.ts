@@ -11,7 +11,7 @@ import { runConfig, validateRunConfig } from "./core/runConfig";
 
 const path = process.argv[2];
 if (!path) {
-  process.stderr.write("usage: celeritas-cli <config.json>\n");
+  process.stderr.write("usage: redshift-cli <config.json>\n");
   process.exit(2);
 }
 let input: unknown;

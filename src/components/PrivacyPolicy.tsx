@@ -23,12 +23,12 @@ const PrivacyPolicy: React.FC = () => {
           
           <div className="prose prose-invert max-w-none prose-slate">
             <p>
-              At Celeritas Spectrometry Suite, accessible from our application, one of our main priorities is the privacy of our visitors and users. This Privacy Policy document contains types of information that is collected and recorded by Celeritas and how we use it.
+              At Redshift Spectrometry Suite, accessible from our application, one of our main priorities is the privacy of our visitors and users. This Privacy Policy document contains types of information that is collected and recorded by Redshift and how we use it.
             </p>
             
             <h2 className="text-xl font-semibold text-white mt-8 mb-4">1. Information We Collect</h2>
             <p>
-              Celeritas operates primarily as a client-side simulation tool. We do not require you to create an account, and we do not collect personally identifiable information (PII) during your standard use of the physics simulation tools.
+              Redshift operates primarily as a client-side simulation tool. We do not require you to create an account, and we do not collect personally identifiable information (PII) during your standard use of the physics simulation tools.
             </p>
             <p>
               If you choose to use the AI Assistant features, your prompts and associated telemetry may be processed by third-party AI providers (such as OpenAI, Anthropic, or Google) according to the API keys you provide locally. Your API keys are stored locally in your browser's local storage and are never transmitted to our servers.

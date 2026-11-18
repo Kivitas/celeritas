@@ -1,4 +1,4 @@
-# Celeritas improvement plan
+# Redshift improvement plan
 
 Audit date: 2026-11-14, at commit `02393d4`. This is a plan only; no source code was changed.
 
@@ -43,7 +43,7 @@ The gap between this and something a CERN group would trust is not polish. It is
 
 Smaller findings are listed inside the tasks that fix them.
 
-One naming issue needs a human decision: **"Celeritas" is already the name of an established HEP code** (the GPU Monte Carlo detector-simulation project led from ORNL, `celeritas-project/celeritas`, used in LHC-experiment studies). Presenting this project to that community under the same name will cause confusion and looks careless. See decision D1 in section 6.
+Naming: the project was renamed to **Redshift** (decision D1, resolved 2026-11-18). The GitHub repository name is unchanged.
 
 ---
 
@@ -290,7 +290,7 @@ src/core/
 
 **T6.1 Versioned run configuration**: one JSON schema (with `schemaVersion`) holding every input including the seed and the data-file versions; validate on load with a schema library; import/export from the UI; encode in the URL for sharing.
 **T6.2 Result export with provenance**: CSV and JSON carrying units in column names, the full configuration, software version, git commit, and data-source versions. A result file alone must be enough to reproduce the run. The PDF report uses the same data.
-**T6.3 Headless use**: publish `src/core` as an importable package entry and a small Node CLI (`celeritas run config.json > result.json`), so results can be scripted and scanned over parameters outside the browser. Parameter scans (yield versus momentum, versus thickness) become a first-class feature built on it, replacing the Batch tab's free-typed β and n columns.
+**T6.3 Headless use**: publish `src/core` as an importable package entry and a small Node CLI (`redshift run config.json > result.json`), so results can be scripted and scanned over parameters outside the browser. Parameter scans (yield versus momentum, versus thickness) become a first-class feature built on it, replacing the Batch tab's free-typed β and n columns.
 
 ### Phase 7: Engineering quality (parallel-safe with phases 4 to 6)
 
@@ -354,6 +354,6 @@ item as confirmed, wrong (with the correct value and source), or could not check
 
 ## 6. Decisions needed from the project owner
 
-- **D1 Name.** "Celeritas" collides with an existing HEP simulation code. Recommendation: rename before any outreach or DOI. T1.4 and T9.3 depend on this.
+- **D1 Name.** Resolved: renamed to Redshift. The repository URL is unchanged; renaming it on GitHub is a separate step.
 - **D2 Scope cut.** Phase 1 deletes a large share of the visible UI (Monte Carlo tab, most plots, exotic-physics switches, ~240 materials, most of the formula library). Recommendation: accept it. A small tool whose every number is defensible is worth more to this audience than a large one that is partly decorative. Phase 4 brings the Monte Carlo tab and the plots back as real output.
 - **D3 Geant4 access.** T5.2 needs someone who can build and run Geant4. Without it, validation rests on NIST, PDG and published detector numbers, which is acceptable for a first release but weaker.

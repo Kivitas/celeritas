@@ -1,6 +1,6 @@
-# Cloudflare Pages configuration for Celeritas Spectrometry Lab.
+# Cloudflare Pages configuration for Redshift Spectrometry Lab.
 # Security headers live in public/_headers; SPA routing lives in public/_redirects.
 
-name = "celeritas-spectrometry"
+name = "redshift-spectrometry"
 compatibility_date = "2024-01-01"
 pages_build_output_dir = "dist"

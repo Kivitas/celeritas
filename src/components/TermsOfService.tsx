@@ -23,12 +23,12 @@ const TermsOfService: React.FC = () => {
           
           <div className="prose prose-invert max-w-none prose-slate">
             <p>
-              Welcome to Celeritas Spectrometry Suite. By accessing or using this application, you agree to be bound by these Terms of Service. If you disagree with any part of the terms, you may not access the service.
+              Welcome to Redshift Spectrometry Suite. By accessing or using this application, you agree to be bound by these Terms of Service. If you disagree with any part of the terms, you may not access the service.
             </p>
 
             <h2 className="text-xl font-semibold text-white mt-8 mb-4">1. Educational and Research Use</h2>
             <p>
-              Celeritas is designed as an educational and research-oriented physics simulation tool. The data, visualizations, and metrics provided by this application are estimations based on theoretical models and should not be used for mission-critical engineering, clinical, dosimetric, or radiation-safety decisions without independent verification. Celeritas is a research and teaching simulator and is not a medical or radiation-safety tool.
+              Redshift is designed as an educational and research-oriented physics simulation tool. The data, visualizations, and metrics provided by this application are estimations based on theoretical models and should not be used for mission-critical engineering, clinical, dosimetric, or radiation-safety decisions without independent verification. Redshift is a research and teaching simulator and is not a medical or radiation-safety tool.
             </p>
 
             <h2 className="text-xl font-semibold text-white mt-8 mb-4">2. Intellectual Property</h2>
@@ -48,7 +48,7 @@ const TermsOfService: React.FC = () => {
 
             <h2 className="text-xl font-semibold text-white mt-8 mb-4">5. Limitation of Liability</h2>
             <p>
-              In no event shall the developers of Celeritas be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or relating to your use of the application or its simulation results.
+              In no event shall the developers of Redshift be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or relating to your use of the application or its simulation results.
             </p>
 
             <div className="mt-12 p-6 bg-slate-800/50 rounded-xl border border-slate-700">

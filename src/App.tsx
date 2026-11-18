@@ -316,7 +316,7 @@ export default function App() {
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <span className="text-white font-bold text-sm tracking-tight">Celeritas</span>
+              <span className="text-white font-bold text-sm tracking-tight">Redshift</span>
             </div>
 
             <div className="hidden lg:flex items-center gap-3">

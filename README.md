@@ -1,8 +1,8 @@
-# Celeritas: Cherenkov Spectrometry Simulator
+# Redshift: Cherenkov Spectrometry Simulator
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-Celeritas is a React 19 + TypeScript + Vite dashboard for exploring Cherenkov radiation: relativistic kinematics, Frank-Tamm photon yields, Sellmeier dispersion, and detector settings for research and teaching.
+Redshift is a React 19 + TypeScript + Vite dashboard for exploring Cherenkov radiation: relativistic kinematics, Frank-Tamm photon yields, Sellmeier dispersion, and detector settings for research and teaching.
 
 ## Physics model
 

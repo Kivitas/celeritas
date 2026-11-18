@@ -1,6 +1,6 @@
 {
-  "name": "Celeritas Spectrometry",
-  "short_name": "Celeritas",
+  "name": "Redshift Spectrometry",
+  "short_name": "Redshift",
   "description": "Advanced Cherenkov spectroscopy simulation platform",
   "start_url": "/",
   "display": "standalone",

@@ -29,7 +29,7 @@ export const AI_PROVIDERS = [
   },
 ];
 
-const STORAGE_KEY = 'celeritas_ai_keys';
+const STORAGE_KEY = 'redshift_ai_keys';
 const REQUEST_TIMEOUT_MS = 60_000;
 
 // Security note: API keys are stored in localStorage, so any script running on
@@ -43,7 +43,7 @@ export function loadApiKeys(): Record<string, string> {
   }
 }
 
-const REMEMBER_KEY = "celeritas_ai_remember";
+const REMEMBER_KEY = "redshift_ai_remember";
 
 // Whether the user opted in to storing keys. Itself stored only when the user chooses (plan T8.2).
 export function loadRememberFlag(): boolean {
@@ -93,7 +93,7 @@ export const AI_MODELS_CHECKED_ON = "not re-verified (set when checked)";
 
 // The assistant must not invent numbers. It is given the simulator output as JSON and told to use only it.
 function buildSystemPrompt() {
-  return `You are the AI assistant for the Celeritas Cherenkov simulator. Explain the physics and the configuration.
+  return `You are the AI assistant for the Redshift Cherenkov simulator. Explain the physics and the configuration.
 Rules:
 - Quote numbers only if they appear in the JSON context you are given. Do not compute or recall other values.
 - Say when the answer depends on a limitation listed in the context (for example: no energy-loss model for some materials, no density effect for electrons above 1 MeV).
