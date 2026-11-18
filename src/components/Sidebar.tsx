@@ -4,11 +4,11 @@
  */
 
 import React from "react";
-import { Activity, Monitor, Cpu, GitBranch, Compass, X, Zap, ChevronRight } from "lucide-react";
+import { Activity, Dices, Monitor, Cpu, GitBranch, Compass, X, Zap, ChevronRight } from "lucide-react";
 
 interface SidebarProps {
-  activeTab: "configure" | "lab" | "batch" | "exports" | "validation" | "instruments" | "theory";
-  onTabChange: (tab: "configure" | "lab" | "batch" | "exports" | "validation" | "instruments" | "theory") => void;
+  activeTab: "configure" | "lab" | "batch" | "exports" | "validation" | "instruments" | "theory" | "montecarlo";
+  onTabChange: (tab: "configure" | "lab" | "batch" | "exports" | "validation" | "instruments" | "theory" | "montecarlo") => void;
   isOpen: boolean;
   onClose: () => void;
   isMobile: boolean;
@@ -17,6 +17,7 @@ interface SidebarProps {
 const navItems = [
   { id: "configure" as const, label: "Simulation Controls", icon: Activity, desc: "Particle beam & detector config" },
   { id: "lab" as const, label: "3D Chamber Lab", icon: Monitor, desc: "Interactive visualization" },
+  { id: "montecarlo" as const, label: "Monte Carlo", icon: Dices, desc: "Photon-level seeded run" },
   { id: "batch" as const, label: "Batch Accelerator", icon: Cpu, desc: "Multi-sample processing" },
   { id: "exports" as const, label: "Analytical Predictors", icon: GitBranch, desc: "Performance forecasting" },
   { id: "validation" as const, label: "Benchmark Journal", icon: Compass, desc: "Calibration & validation" },

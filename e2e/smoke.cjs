@@ -33,12 +33,18 @@ async function main() {
   }
 
   // Monte Carlo: run in the worker and wait for the comparison with the analytic engine.
-  await page.getByRole("button", { name: /Simulation/i }).first().click({ timeout: 5000 });
+  await page.getByRole("button", { name: /^Monte Carlo/i }).first().click({ timeout: 5000 });
   await page.waitForTimeout(400);
   await page.getByRole("button", { name: /Run Monte Carlo/i }).click({ timeout: 10000 });
   await page.getByText(/σ/).first().waitFor({ timeout: 120000 });
   const mcText = await page.locator("#monte-carlo-panel").innerText();
   if (!/σ/.test(mcText)) problems.push("monte carlo: no comparison shown");
+
+  // 3D lab: the model draws rays for the default configuration.
+  await page.getByRole("button", { name: /3D Chamber Lab/i }).first().click({ timeout: 5000 });
+  await page.waitForTimeout(400);
+  const rays = await page.locator("#lab-tab svg polyline").count();
+  if (rays === 0) problems.push("3D lab: no rays drawn");
 
   await browser.close();
 

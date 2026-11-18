@@ -72,12 +72,13 @@ const DEFAULT_PARAMS: SimulationParams = {
   daq: { deadtimeFraction: 0 },
 };
 
-type TabId = "configure" | "lab" | "batch" | "exports" | "validation" | "instruments" | "theory";
+type TabId = "configure" | "lab" | "batch" | "exports" | "validation" | "instruments" | "theory" | "montecarlo";
 
 // Mobile tab bar: every tab, with a short label for the narrow header strip
 const MOBILE_TABS: { id: TabId; short: string }[] = [
   { id: "configure", short: "Sim" },
   { id: "lab", short: "3D" },
+  { id: "montecarlo", short: "MC" },
   { id: "batch", short: "Batch" },
   { id: "exports", short: "Export" },
   { id: "validation", short: "Journal" },
@@ -271,6 +272,7 @@ export default function App() {
                 <span className="text-[11px] font-bold text-slate-300 uppercase tracking-widest">
                   {activeTab === "configure" && "Simulation Controls"}
                   {activeTab === "lab" && "3D Chamber Lab"}
+                  {activeTab === "montecarlo" && "Monte Carlo"}
                   {activeTab === "batch" && "Batch Accelerator"}
                   {activeTab === "exports" && "Analytical Predictors"}
                   {activeTab === "validation" && "Benchmark Journal"}
@@ -386,6 +388,16 @@ export default function App() {
                   />
                 )}
 
+                {activeTab === "montecarlo" && (
+                    <MonteCarloPanel
+                      params={params}
+                      material={activeMaterialPreset}
+                      isotope={activeIsotopePreset}
+                      detector={detector}
+                      isDarkMode={isDarkMode}
+                    />
+                )}
+
                 {activeTab === "instruments" && (
                   <InstrumentsTab isDarkMode={isDarkMode} />
                 )}
@@ -406,14 +418,6 @@ export default function App() {
                         isDarkMode={isDarkMode}
                       />
                     </Suspense>
-
-                    <MonteCarloPanel
-                      params={params}
-                      material={activeMaterialPreset}
-                      isotope={activeIsotopePreset}
-                      detector={detector}
-                      isDarkMode={isDarkMode}
-                    />
 
                     {/* Physics Details Panel - Shows when all components enabled */}
                     <PhysicsDetailsPanel

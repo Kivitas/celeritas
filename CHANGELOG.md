@@ -5,6 +5,10 @@ release is tagged. Changes that alter results are marked **[results]**.
 
 ## [Unreleased]
 
+### Added
+- Monte Carlo is now its own sidebar module. The 3D Chamber Lab is a rotatable geometric-optics model (src/core/lab.ts):
+  seeded rays at the Cherenkov angle, total internal reflection at the faces, detector-face hits and a critical-angle warning.
+
 ### Changed
 - **[results]** Energy loss along the track for water (electron Møller form, heavy-particle Bethe). The default 0.546 MeV
   electron in 10 mm of water now gives about 24 photons per particle, against 271 with the earlier constant-speed model.
