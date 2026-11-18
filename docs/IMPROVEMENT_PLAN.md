@@ -8,18 +8,20 @@ It is written to be executed by models working one task at a time with no memory
 
 ## 0. Status (updated as work lands)
 
-| Phase | State | Delivered | Not delivered (blocker) |
+Status as of 2026-11-18. "Blocked" means the missing piece needs a source or access this environment does not have. Nothing below is marked done unless the code and tests exist.
+
+| Phase | State | Delivered | Still open (reason) |
 |---|---|---|---|
-| 0 Guard rails | Done | CI on PRs, lint, strict TS, regression snapshot, coverage gate | Component dead-code warnings (30) |
-| 1 Remove invented output | Done | Synthetic plots, MC tab, inert controls, fabricated export text, formula library cut to 15 | - |
-| 2 Sourced data | Closed with deviations | PDG masses (e, mu, pi, K, p, n, d, u); 8 materials with sourced dispersion; Hale and Querry water absorption; Beer-Lambert path | Alpha and C-12 masses (not found in PDG pages); Pope and Fry absorption (not obtainable); 8 of about 12 materials; PbF2 (convention unresolved) |
-| 3 Physics core | Closed with deviations | Module split; precision near beta=1; exact bin integration; yield-weighted angle and spread; energy loss for water (NIST residuals recorded); no rounding in core | Density effect (no sourced water parameters: electrons 4% high at 2 MeV, 13% at 10 MeV); beta spectra beyond the allowed shape (Sr-90 +29%, Y-90 +16%) |
-| 4 Real Monte Carlo and detector | Partial | Seeded photon MC agreeing with the analytic engine within 4 SE; statistical errors | Scattering, delta rays, Fresnel and TIR, Web Worker; photosensor curves (no datasheets fetched); ring imaging and PID |
-| 5 Validation | Partial | 17 sourced records, runner, report (15 pass, 1 known limitation, 1 not automated) | Geant4 cross-check (no Geant4 in this environment); in-app Validation tab still shows arithmetic checks |
-| 6 Reproducibility | Partial | Versioned schema with validation, import and export, provenance, headless CLI | Parameter-scan feature; PDF export is still a screenshot |
-| 7 Engineering | Partial | Dependencies cut; any removed; error boundary; initial JS 142 kB gzip; browser smoke test; Vitest 5 (audit: 2 low) | App.tsx still 686 lines; full accessibility pass; component tests |
-| 8 Security | Done with caveat | CSP (headers and meta); in-memory keys with opt-in; grounded and labelled assistant | Model identifiers not re-verified against provider lists |
-| 9 Documentation | Partial | Physics manual, contributor guide, changelog, templates, README | Citable release: Zenodo archive and a tagged release need an external account; no tag created |
+| 0 Guard rails | Done | CI on PRs, lint, strict TS, regression snapshot, coverage gate | 30 lint warnings (dead variables in UI components) |
+| 1 Remove invented output | Done | Synthetic plots, MC tab, inert controls, fabricated export text, formula library cut to 15 | none |
+| 2 Sourced data | Partial | PDG masses for e, mu, pi, K, p, n, d, u. Alpha and C-12 masses DERIVED from AME2020 (flagged, not PDG). 8 materials with sourced dispersion. Hale and Querry water absorption. Beer-Lambert path | Pope and Fry absorption (blocked: OSA article unreachable). 4 more materials not sourced. PbF2 convention unresolved |
+| 3 Physics core | Partial | Module split; exact bin integration; yield-weighted angle and spread; energy loss for water; no rounding in core | Density effect (blocked: Sternheimer 1984 parameters not reachable; electrons 4% high at 2 MeV, 13% at 10 MeV). Fermi function quoted (arXiv:2309.15918) but not implemented. Sr-90 forbidden shape not confirmed and Sr-90 mean not found (blocked) |
+| 4 Monte Carlo and detector | Partial | Seeded photon MC agreeing with the analytic engine within 4 SE. Highland constants confirmed (PDG 2026 Eq. 34.16: 13.6 MeV, 0.038) | Multiple scattering, Fresnel and TIR, Web Worker: not implemented. Photosensor curves: no datasheet source. Ring imaging: LHCb paper gives no 3-sigma momentum range (blocked as a validation target) |
+| 5 Validation | Partial | 17 records with sources, one shared evaluation module used by tests and the in-app Validation tab (15 pass, 1 known limitation, 1 not automated) | Geant4 cross-check: the Python binding installed, but the sandbox classifier denied the import check, so no cross-check was run. Blocked here |
+| 6 Reproducibility | Partial | Versioned schema with validation, import and export, provenance, headless CLI | Parameter-scan feature and a data-based PDF report: not implemented |
+| 7 Engineering | Partial | Dependencies cut; any removed; error boundary; initial JS 142 kB gzipped; browser smoke test; Vitest 5 | App.tsx still 686 lines; accessibility pass (axe) not run; component tests not written |
+| 8 Security | Partial | CSP (headers and meta); keys in memory with opt-in; grounded and labelled assistant | Provider model identifiers not re-verified |
+| 9 Documentation | Partial | Physics manual, contributor guide, changelog, templates, README; project renamed to Redshift | Citable release: needs an external Zenodo account and a tagged release (blocked). No tag created |
 
 ## 1. Where the project stands
 
