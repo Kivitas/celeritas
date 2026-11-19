@@ -24,7 +24,7 @@ export interface McResponse {
   mc: McResult;
   /** Analytic detected photons per primary, with the same detector settings. */
   analyticDetectedPerParticle: number;
-  /** (MC - analytic) / standard error. Within about +-3 is consistent. */
+  /** (MC primary-only - analytic) / standard error. Within about +-3 is consistent. */
   zScore: number;
   /** Wall-clock time of the Monte Carlo run in milliseconds. */
   runtimeMs: number;
@@ -65,8 +65,10 @@ export function runMonteCarloRequest(req: McRequest): McResponse {
   const detector = options.detectorEfficiency ? req.detector : { ...req.detector, quantumEfficiencyPct: 100 };
   const analytic = runCherenkovSimulation(params, material, req.isotope, detector).summary;
   const analyticDetectedPerParticle = analytic.totalPhotonsDetected / analytic.firedParticles;
-  const zScore = mc.stdErrDetectedPerParticle > 0
-    ? (mc.meanDetectedPerParticle - analyticDetectedPerParticle) / mc.stdErrDetectedPerParticle
+  // The analytic engine models the primary only, so the test uses the primary's own photons. Delta rays and
+  // decay electrons are extra and are reported separately.
+  const zScore = mc.stdErrPrimaryDetectedPerParticle > 0
+    ? (mc.meanPrimaryDetectedPerParticle - analyticDetectedPerParticle) / mc.stdErrPrimaryDetectedPerParticle
     : 0;
   return { mc, analyticDetectedPerParticle, zScore, runtimeMs };
 }

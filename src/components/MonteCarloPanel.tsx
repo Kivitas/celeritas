@@ -7,7 +7,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { Dices, Play, Shuffle, Square } from "lucide-react";
 import type { SimulationParams, MaterialPreset, IsotopeProfile, DetectorSettings } from "../types";
 import { startMonteCarlo, type McHandle } from "../services/monteCarloClient";
-import { MC_DEFAULT_OPTIONS, type McOptions } from "../core/monteCarlo";
+import { MC_DEFAULT_OPTIONS, type McOptions, type ExternalParticle } from "../core/monteCarlo";
+import { parseExternalEvents } from "../core/externalEvents";
+import { DECAY_LENGTH_M } from "../data/particles";
 import { validateMcRequest, MC_LIMITS, type McResponse } from "../core/monteCarloRequest";
 
 interface Props {
@@ -24,13 +26,14 @@ export default function MonteCarloPanel({ params, material, isotope, detector, i
   const [primaries, setPrimaries] = useState<number>(4000);
   const [seed, setSeed] = useState<number>(12345);
   const [options, setOptions] = useState<McOptions>(MC_DEFAULT_OPTIONS);
+  const [external, setExternal] = useState<{ name: string; events: ExternalParticle[][]; rows: number } | null>(null);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<McResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const handle = useRef<McHandle | null>(null);
 
   // A run belongs to the configuration it started with. Changing the configuration clears it.
-  const configKey = JSON.stringify([params, material.id, isotope?.id, detector, options]);
+  const configKey = JSON.stringify([params, material.id, isotope?.id, detector, options, external?.name, external?.rows]);
   const lastKey = useRef(configKey);
   useEffect(() => {
     if (lastKey.current !== configKey) {
@@ -51,7 +54,7 @@ export default function MonteCarloPanel({ params, material, isotope, detector, i
     setError(null);
     setResult(null);
     setRunning(true);
-    const h = startMonteCarlo({ params, material, isotope, detector, primaries, seed, options });
+    const h = startMonteCarlo({ params, material, isotope, detector, primaries, seed, options: { ...options, externalEvents: external?.events } });
     handle.current = h;
     h.promise
       .then((r) => setResult(r))
@@ -64,6 +67,26 @@ export default function MonteCarloPanel({ params, material, isotope, detector, i
       });
   };
 
+  const importEvents = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const parsed = parseExternalEvents(await file.text());
+      setExternal({ name: file.name, events: parsed.events, rows: parsed.rows });
+      setError(null);
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const downloadTemplate = () => {
+    const csv = "# Charged secondaries from PYTHIA 8, HERWIG, Geant4 or any other code. Depth is from the radiator entrance face.\nevent,pdgId,kineticMeV,xMm\n1,11,2.5,1.0\n1,11,0.8,3.2\n2,-211,300,0.0\n";
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = "external-events-template.csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   const cancel = () => {
     handle.current?.cancel();
     setRunning(false);
@@ -74,6 +97,8 @@ export default function MonteCarloPanel({ params, material, isotope, detector, i
   const card = isDarkMode ? "bg-slate-900/90 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-800";
   const label = isDarkMode ? "text-slate-400" : "text-slate-500";
   const input = isDarkMode ? "bg-slate-950/80 text-slate-100 border-white/10" : "bg-white text-slate-800 border-slate-200";
+  const unavailable = (key: keyof McOptions) =>
+    ((key === "energyLoss" || key === "deltaRays") && !material.stopping) || (key === "decayInFlight" && !DECAY_LENGTH_M[isotope?.pdgId ?? 0]);
   const agree = result ? Math.abs(result.zScore) < 3 : false;
 
   return (
@@ -83,8 +108,8 @@ export default function MonteCarloPanel({ params, material, isotope, detector, i
       </div>
       <p className={`text-[11px] leading-relaxed ${label}`}>
         Samples each photon along the track and compares the mean with the analytic engine, which gets the same switches. Same seed
-        and settings give the same result. Not modelled: scattering, delta rays, exit-face optics. Event generators (PYTHIA, HERWIG,
-        Geant4) are not part of this app.
+        and settings give the same result. Not modelled: scattering and exit-face optics. The difference test compares the primary alone with the analytic engine;
+        delta rays, decay electrons and imported secondaries are extra.
       </p>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -121,13 +146,44 @@ export default function MonteCarloPanel({ params, material, isotope, detector, i
           ["energyLoss", "Energy loss along the track", material.stopping ? "collision stopping power (Møller / Bethe)" : "not available: this material has no stopping data, so speed stays constant"],
           ["absorption", "Optical absorption", "Beer–Lambert from the emission point to the exit face"],
           ["detectorEfficiency", "Detector efficiency", "quantum efficiency and DAQ dead time"],
+          ["deltaRays", "Delta rays (knock-on electrons)", material.stopping ? "electrons above the Cherenkov threshold, each followed with energy loss" : "not available: needs stopping data"],
+          ["decayInFlight", "Decay in flight", DECAY_LENGTH_M[isotope?.pdgId ?? 0] ? "muon, pion, kaon; a muon's Michel electron is followed" : "not available: this particle is treated as stable"],
         ] as const).map(([key, name, note]) => (
           <label key={key} className="flex items-start gap-2 text-[11px] cursor-pointer">
-            <input type="checkbox" className="mt-0.5 accent-orange-500" checked={options[key] && !(key === "energyLoss" && !material.stopping)} disabled={key === "energyLoss" && !material.stopping}
+            <input type="checkbox" className="mt-0.5 accent-orange-500" checked={options[key] && !unavailable(key)} disabled={unavailable(key)}
               onChange={(e) => setOptions((o) => ({ ...o, [key]: e.target.checked }))} />
             <span><span className="font-semibold">{name}</span> <span className={label}>· {note}</span></span>
           </label>
         ))}
+      </fieldset>
+      <fieldset className="space-y-2" disabled={running}>
+        <legend className={`text-[9px] uppercase font-bold mb-1 ${label}`}>Event source</legend>
+        <p className={`text-[11px] leading-relaxed ${label}`}>
+          Built-in: the primary particle, its delta rays and its decay. PYTHIA 8, HERWIG and Geant4 cannot run inside a browser, so
+          they work as external generators: run them yourself, export the charged secondaries as CSV, and import the file. Each
+          primary draws one event from the file and its particles are followed through this radiator.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className={`px-2 py-1 rounded-md border text-[10px] font-mono cursor-pointer ${input}`}>
+            Import events (CSV)
+            <input type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => { importEvents(e.target.files?.[0]); e.target.value = ""; }} />
+          </label>
+          <button type="button" onClick={downloadTemplate} className={`px-2 py-1 rounded-md border text-[10px] font-mono ${input}`}>Template</button>
+          {external && (
+            <>
+              <span className="text-[11px]">{external.name}: {external.events.length} events, {external.rows} particles</span>
+              <button type="button" onClick={() => setExternal(null)} className="text-[10px] text-amber-400 underline">remove</button>
+            </>
+          )}
+        </div>
+        <details className={`text-[11px] ${label}`}>
+          <summary className="cursor-pointer">Not available, and why</summary>
+          <ul className="list-disc pl-5 mt-1 space-y-0.5">
+            <li>Hadronic showers: need sourced nuclear interaction lengths and hadron-nucleus models per material. Use Geant4 or PYTHIA 8 and import the secondaries.</li>
+            <li>B-meson decays: negligible in a radiator at these energies and meaningless without a full event generator. Import the daughters from PYTHIA 8 or HERWIG.</li>
+            <li>Detector subsystems (pixel and strip trackers, TPC, calorimeters, muon spectrometer): this app models one radiator block and a photodetector face, not a collider detector.</li>
+          </ul>
+        </details>
       </fieldset>
       <div className="flex gap-2">
         {!running ? (
@@ -155,6 +211,9 @@ export default function MonteCarloPanel({ params, material, isotope, detector, i
           <div className="grid grid-cols-2 gap-3 font-mono text-xs mb-3">
             <div><span className={`block text-[9px] uppercase ${label}`}>MC emitted / primary</span>{result.mc.meanEmittedPerParticle.toFixed(3)} ± {result.mc.stdErrEmittedPerParticle.toFixed(3)}</div>
             <div><span className={`block text-[9px] uppercase ${label}`}>Seed</span>{result.mc.seed}</div>
+            <div><span className={`block text-[9px] uppercase ${label}`}>Delta rays / primary</span>{result.mc.meanDeltaRaysPerParticle.toFixed(3)} (adds {result.mc.meanDeltaDetectedPerParticle.toFixed(3)} detected)</div>
+            <div><span className={`block text-[9px] uppercase ${label}`}>Decayed in radiator</span>{(result.mc.decayFraction * 100).toExponential(2)} % (Michel adds {result.mc.meanDecayDetectedPerParticle.toFixed(4)})</div>
+            {external && <div><span className={`block text-[9px] uppercase ${label}`}>Imported secondaries add</span>{result.mc.meanExternalDetectedPerParticle.toFixed(3)} detected / primary</div>}
           </div>
           <span className={`text-[9px] uppercase font-bold block mb-1 ${label}`}>Detected photons per primary (distribution)</span>
           <Histogram values={result.mc.detectedPerPrimary} />

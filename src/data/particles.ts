@@ -47,3 +47,14 @@ export const ATOMIC_MASS_UNIT_MEV = 931.49410372;
 export function particleMassMeV(pdgId: number): number | undefined {
   return PARTICLES[pdgId]?.massMeV;
 }
+
+/**
+ * Proper decay length c*tau in metres for unstable charged particles, from the PDG mean lifetimes:
+ * muon 2.1969811 us, charged pion 2.6033e-8 s, charged kaon 1.2380e-8 s. Recalled from the PDG listings,
+ * NOT re-fetched in this project, so they are flagged unverified. Particles absent here are treated as stable.
+ */
+export const DECAY_LENGTH_M: Record<number, { cTauM: number; verified: boolean; note: string }> = {
+  13: { cTauM: 658.6384, verified: false, note: "PDG muon mean life 2.1969811 us (recalled, not re-fetched)" },
+  211: { cTauM: 7.8045, verified: false, note: "PDG charged pion mean life 2.6033e-8 s (recalled, not re-fetched)" },
+  321: { cTauM: 3.7111, verified: false, note: "PDG charged kaon mean life 1.2380e-8 s (recalled, not re-fetched)" },
+};

@@ -6,6 +6,9 @@ release is tagged. Changes that alter results are marked **[results]**.
 ## [Unreleased]
 
 ### Added
+- Monte Carlo: delta rays (knock-on electrons above the Cherenkov threshold, followed with energy loss), decay in flight for
+  muons, pions and kaons (a muon's Michel electron is followed; decay lengths are recalled PDG values, unverified), and import
+  of charged secondaries from external generators (PYTHIA 8, HERWIG, Geant4) as CSV. The analytic comparison uses the primary only.
 - Monte Carlo options: switches for energy loss, optical absorption and detector efficiency (the analytic comparison follows the
   same switches), quick run sizes, a new-seed button and a detected-photons-per-primary distribution.
 - Monte Carlo is now its own sidebar module. The 3D Chamber Lab is a rotatable geometric-optics model (src/core/lab.ts):
