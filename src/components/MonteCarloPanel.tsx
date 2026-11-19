@@ -4,9 +4,10 @@
  */
 
 import React, { useEffect, useRef, useState } from "react";
-import { Dices, Play, Square } from "lucide-react";
+import { Dices, Play, Shuffle, Square } from "lucide-react";
 import type { SimulationParams, MaterialPreset, IsotopeProfile, DetectorSettings } from "../types";
 import { startMonteCarlo, type McHandle } from "../services/monteCarloClient";
+import { MC_DEFAULT_OPTIONS, type McOptions } from "../core/monteCarlo";
 import { validateMcRequest, MC_LIMITS, type McResponse } from "../core/monteCarloRequest";
 
 interface Props {
@@ -22,13 +23,14 @@ interface Props {
 export default function MonteCarloPanel({ params, material, isotope, detector, isDarkMode }: Props) {
   const [primaries, setPrimaries] = useState<number>(4000);
   const [seed, setSeed] = useState<number>(12345);
+  const [options, setOptions] = useState<McOptions>(MC_DEFAULT_OPTIONS);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<McResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const handle = useRef<McHandle | null>(null);
 
   // A run belongs to the configuration it started with. Changing the configuration clears it.
-  const configKey = JSON.stringify([params, material.id, isotope?.id, detector]);
+  const configKey = JSON.stringify([params, material.id, isotope?.id, detector, options]);
   const lastKey = useRef(configKey);
   useEffect(() => {
     if (lastKey.current !== configKey) {
@@ -49,7 +51,7 @@ export default function MonteCarloPanel({ params, material, isotope, detector, i
     setError(null);
     setResult(null);
     setRunning(true);
-    const h = startMonteCarlo({ params, material, isotope, detector, primaries, seed });
+    const h = startMonteCarlo({ params, material, isotope, detector, primaries, seed, options });
     handle.current = h;
     h.promise
       .then((r) => setResult(r))
@@ -80,8 +82,9 @@ export default function MonteCarloPanel({ params, material, isotope, detector, i
         <Dices className="w-4 h-4" /> Monte Carlo (photon-level, seeded)
       </div>
       <p className={`text-[11px] leading-relaxed ${label}`}>
-        Samples each photon along the track and compares the mean with the analytic engine. Same seed and settings give the same
-        result. Not yet modelled: scattering, delta rays, exit-face optics.
+        Samples each photon along the track and compares the mean with the analytic engine, which gets the same switches. Same seed
+        and settings give the same result. Not modelled: scattering, delta rays, exit-face optics. Event generators (PYTHIA, HERWIG,
+        Geant4) are not part of this app.
       </p>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -97,6 +100,35 @@ export default function MonteCarloPanel({ params, material, isotope, detector, i
             className={`w-full rounded-lg border px-2 py-1.5 text-xs font-mono ${input}`} />
         </div>
       </div>
+      <div>
+        <span className={`text-[9px] uppercase font-bold block mb-1 ${label}`}>Quick sizes</span>
+        <div className="flex flex-wrap gap-1.5">
+          {[1000, 4000, 20000, 100000, 200000].map((n) => (
+            <button key={n} type="button" disabled={running} onClick={() => setPrimaries(n)}
+              className={`px-2 py-1 rounded-md border text-[10px] font-mono ${primaries === n ? "border-orange-500 text-orange-400" : input}`}>
+              {n.toLocaleString()}
+            </button>
+          ))}
+          <button type="button" disabled={running} onClick={() => setSeed(Math.floor(Math.random() * 0xffffffff))}
+            className={`px-2 py-1 rounded-md border text-[10px] font-mono flex items-center gap-1 ${input}`}>
+            <Shuffle className="w-3 h-3" /> New seed
+          </button>
+        </div>
+      </div>
+      <fieldset className="space-y-1.5" disabled={running}>
+        <legend className={`text-[9px] uppercase font-bold mb-1 ${label}`}>Physics included</legend>
+        {([
+          ["energyLoss", "Energy loss along the track", material.stopping ? "collision stopping power (Møller / Bethe)" : "not available: this material has no stopping data, so speed stays constant"],
+          ["absorption", "Optical absorption", "Beer–Lambert from the emission point to the exit face"],
+          ["detectorEfficiency", "Detector efficiency", "quantum efficiency and DAQ dead time"],
+        ] as const).map(([key, name, note]) => (
+          <label key={key} className="flex items-start gap-2 text-[11px] cursor-pointer">
+            <input type="checkbox" className="mt-0.5 accent-orange-500" checked={options[key] && !(key === "energyLoss" && !material.stopping)} disabled={key === "energyLoss" && !material.stopping}
+              onChange={(e) => setOptions((o) => ({ ...o, [key]: e.target.checked }))} />
+            <span><span className="font-semibold">{name}</span> <span className={label}>· {note}</span></span>
+          </label>
+        ))}
+      </fieldset>
       <div className="flex gap-2">
         {!running ? (
           <button onClick={run} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold">
@@ -118,6 +150,40 @@ export default function MonteCarloPanel({ params, material, isotope, detector, i
           <div><span className={`block text-[9px] uppercase ${label}`}>Run</span>{result.mc.primaries.toLocaleString()} primaries, {result.runtimeMs} ms</div>
         </div>
       )}
+      {result && (
+        <div>
+          <div className="grid grid-cols-2 gap-3 font-mono text-xs mb-3">
+            <div><span className={`block text-[9px] uppercase ${label}`}>MC emitted / primary</span>{result.mc.meanEmittedPerParticle.toFixed(3)} ± {result.mc.stdErrEmittedPerParticle.toFixed(3)}</div>
+            <div><span className={`block text-[9px] uppercase ${label}`}>Seed</span>{result.mc.seed}</div>
+          </div>
+          <span className={`text-[9px] uppercase font-bold block mb-1 ${label}`}>Detected photons per primary (distribution)</span>
+          <Histogram values={result.mc.detectedPerPrimary} />
+        </div>
+      )}
     </div>
+  );
+}
+
+function Histogram({ values }: { values: number[] }) {
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (const v of values) { if (v < lo) lo = v; if (v > hi) hi = v; }
+  if (!values.length) return null;
+  const nBins = Math.min(40, hi - lo + 1);
+  const width = (hi - lo + 1) / nBins;
+  const counts = new Array<number>(nBins).fill(0);
+  for (const v of values) counts[Math.min(nBins - 1, Math.floor((v - lo) / width))]++;
+  const max = Math.max(1, ...counts);
+  const W = 400;
+  const H = 70;
+  const bw = W / nBins;
+  return (
+    <svg viewBox={`0 0 ${W} ${H + 14}`} className="w-full max-h-40" role="img" aria-label="Histogram of detected photons per primary">
+      {counts.map((c, k) => (
+        <rect key={k} x={k * bw + 0.5} y={H - (c / max) * H} width={Math.max(1, bw - 1)} height={(c / max) * H} fill="#f97316" opacity={0.85} />
+      ))}
+      <text x={0} y={H + 11} fontSize={9} fill="#94a3b8">{lo}</text>
+      <text x={W} y={H + 11} fontSize={9} fill="#94a3b8" textAnchor="end">{hi}</text>
+    </svg>
   );
 }

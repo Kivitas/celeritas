@@ -44,3 +44,28 @@ describe("Monte Carlo request end to end (wired to the analytic engine)", () => 
     expect(() => runMonteCarloRequest({ params, material: water, isotope: sr90, detector, primaries: 5, seed: 7 })).toThrow(/Primaries/);
   });
 });
+
+describe("Monte Carlo switches stay consistent with the analytic engine", () => {
+  const cases = [
+    { energyLoss: false, absorption: true, detectorEfficiency: true },
+    { energyLoss: true, absorption: false, detectorEfficiency: true },
+    { energyLoss: true, absorption: true, detectorEfficiency: false },
+  ];
+  for (const options of cases) {
+    it(`agrees within 4 sigma with ${JSON.stringify(options)}`, () => {
+      const r = runMonteCarloRequest({ params, material: water, isotope: sr90, detector, primaries: 20000, seed: 11, options });
+      expect(Math.abs(r.zScore)).toBeLessThan(4);
+    });
+  }
+  it("turning detector efficiency off raises the detected count", () => {
+    const on = runMonteCarloRequest({ params, material: water, isotope: sr90, detector, primaries: 4000, seed: 3 });
+    const off = runMonteCarloRequest({ params, material: water, isotope: sr90, detector, primaries: 4000, seed: 3, options: { energyLoss: true, absorption: true, detectorEfficiency: false } });
+    expect(off.mc.meanDetectedPerParticle).toBeGreaterThan(on.mc.meanDetectedPerParticle);
+  });
+  it("records the detected count of every primary", () => {
+    const r = runMonteCarloRequest({ params, material: water, isotope: sr90, detector, primaries: 1000, seed: 5 });
+    expect(r.mc.detectedPerPrimary).toHaveLength(1000);
+    const mean = r.mc.detectedPerPrimary.reduce((a, b) => a + b, 0) / 1000;
+    expect(mean).toBeCloseTo(r.mc.meanDetectedPerParticle, 9);
+  });
+});

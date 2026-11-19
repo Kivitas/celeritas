@@ -27,8 +27,22 @@ import { tabulatedAbsorptionPerMm, getMediumCoefficients, calculateEffectiveAtte
 import { sampleEnergyLossPath } from "./stopping";
 import { resolveParticleMassMeV } from "./simulate";
 
+/** Switches for the physics included in a run. All default to on. */
+export interface McOptions {
+  /** Step the primary through the radiator with collision energy loss (only where the material has stopping data). */
+  energyLoss: boolean;
+  /** Apply optical absorption between the emission point and the exit face. */
+  absorption: boolean;
+  /** Apply detector quantum efficiency and DAQ dead time. */
+  detectorEfficiency: boolean;
+}
+
+export const MC_DEFAULT_OPTIONS: McOptions = { energyLoss: true, absorption: true, detectorEfficiency: true };
+
 export interface McResult {
   primaries: number;
+  /** Detected photons for each primary, in run order (for distributions). */
+  detectedPerPrimary: number[];
   seed: number;
   /** Mean detected photons per primary. */
   meanDetectedPerParticle: number;
@@ -53,7 +67,8 @@ export function runMonteCarlo(
   isotope: IsotopeProfile | undefined,
   detector: DetectorSettings | undefined,
   primaries: number,
-  seed: number
+  seed: number,
+  options: McOptions = MC_DEFAULT_OPTIONS
 ): McResult {
   const rng = new Rng(seed);
   const massMeV = resolveParticleMassMeV(params, isotope);
@@ -88,14 +103,14 @@ export function runMonteCarlo(
     binMu.push(mu !== undefined ? mu : calculateEffectiveAttenuation(coeff.mu_a, coeff.mu_s, material.anisotropyG));
   }
 
-  const detectionFactor = detector
+  const detectionFactor = detector && options.detectorEfficiency
     ? Math.min(1, Math.max(0, (detector.quantumEfficiencyPct || 0) / 100)) * (params.daq ? 1 - Math.min(1, Math.max(0, params.daq.deadtimeFraction || 0)) : 1)
     : 1;
   const zSq = (params.isotopeId === "custom" ? (params.customChargeE ?? 1) : (params.beamCharge ?? 1)) ** 2;
   const prefactor = 2 * Math.PI * FINE_STRUCTURE_CONSTANT * zSq; // per metre of path, before the bin integral
 
   const steps = (): Step[] => {
-    if (material.stopping) {
+    if (material.stopping && options.energyLoss) {
       return sampleEnergyLossPath(E, massMeV, material.stopping, emissionLengthMm).samples;
     }
     return [{ xMm: emissionLengthMm / 2, kineticMeV: E, dxMm: emissionLengthMm }];
@@ -103,6 +118,7 @@ export function runMonteCarlo(
 
   let sumDet = 0;
   let sumDet2 = 0;
+  const detectedPerPrimary = new Array<number>(primaries);
   let sumEmit = 0;
   let sumEmit2 = 0;
   const pathSteps = steps();
@@ -138,10 +154,11 @@ export function runMonteCarlo(
         rng.uniform();
         // Transport from the emission point (x) to the exit face, then detection.
         const muPerMm = binMu[b];
-        const survive = Math.exp(-muPerMm * (depthMm - table.step.xMm));
+        const survive = options.absorption ? Math.exp(-muPerMm * (depthMm - table.step.xMm)) : 1;
         if (rng.uniform() < survive * detectionFactor) detected++;
       }
     }
+    detectedPerPrimary[p] = detected;
     sumDet += detected;
     sumDet2 += detected * detected;
     sumEmit += emitted;
@@ -152,6 +169,7 @@ export function runMonteCarlo(
   const variance = Math.max(0, sumDet2 / primaries - meanDet * meanDet) * (primaries / Math.max(1, primaries - 1));
   return {
     primaries,
+    detectedPerPrimary,
     seed,
     meanDetectedPerParticle: meanDet,
     stdErrDetectedPerParticle: Math.sqrt(variance / primaries),

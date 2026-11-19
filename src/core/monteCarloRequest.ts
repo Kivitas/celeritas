@@ -7,7 +7,7 @@
 // Monte Carlo and the analytic engine with the same inputs, so the two can be compared directly.
 
 import type { SimulationParams, MaterialPreset, IsotopeProfile, DetectorSettings } from "../types";
-import { runMonteCarlo, type McResult } from "./monteCarlo";
+import { runMonteCarlo, MC_DEFAULT_OPTIONS, type McOptions, type McResult } from "./monteCarlo";
 import { runCherenkovSimulation } from "./simulate";
 
 export interface McRequest {
@@ -17,6 +17,7 @@ export interface McRequest {
   detector: DetectorSettings;
   primaries: number;
   seed: number;
+  options?: McOptions;
 }
 
 export interface McResponse {
@@ -46,14 +47,23 @@ export function runMonteCarloRequest(req: McRequest): McResponse {
   const problem = validateMcRequest(req);
   if (problem) throw new Error(problem);
   const started = Date.now();
-  const mc = runMonteCarlo(req.params, req.material, req.isotope, req.detector, req.primaries, req.seed);
+  const options = req.options ?? MC_DEFAULT_OPTIONS;
+  const mc = runMonteCarlo(req.params, req.material, req.isotope, req.detector, req.primaries, req.seed, options);
   const runtimeMs = Date.now() - started;
-  const analytic = runCherenkovSimulation(
-    { ...req.params, numberFiredParticles: 1 },
-    req.material,
-    req.isotope,
-    req.detector
-  ).summary;
+  // The analytic engine gets the same switches: no stopping data means constant speed, a near-zero
+  // absorption table means no absorption, and a perfect detector means no efficiency factor.
+  const material = { ...req.material };
+  if (!options.energyLoss) delete material.stopping;
+  if (!options.absorption) {
+    material.absorptionTable = [
+      { wavelengthNm: 1, alphaPerM: 1e-12 },
+      { wavelengthNm: 100000, alphaPerM: 1e-12 },
+    ];
+  }
+  const params = { ...req.params, numberFiredParticles: 1 };
+  if (!options.detectorEfficiency) params.daq = { ...params.daq, deadtimeFraction: 0 };
+  const detector = options.detectorEfficiency ? req.detector : { ...req.detector, quantumEfficiencyPct: 100 };
+  const analytic = runCherenkovSimulation(params, material, req.isotope, detector).summary;
   const analyticDetectedPerParticle = analytic.totalPhotonsDetected / analytic.firedParticles;
   const zScore = mc.stdErrDetectedPerParticle > 0
     ? (mc.meanDetectedPerParticle - analyticDetectedPerParticle) / mc.stdErrDetectedPerParticle

@@ -6,6 +6,8 @@ release is tagged. Changes that alter results are marked **[results]**.
 ## [Unreleased]
 
 ### Added
+- Monte Carlo options: switches for energy loss, optical absorption and detector efficiency (the analytic comparison follows the
+  same switches), quick run sizes, a new-seed button and a detected-photons-per-primary distribution.
 - Monte Carlo is now its own sidebar module. The 3D Chamber Lab is a rotatable geometric-optics model (src/core/lab.ts):
   seeded rays at the Cherenkov angle, total internal reflection at the faces, detector-face hits and a critical-angle warning.
 
